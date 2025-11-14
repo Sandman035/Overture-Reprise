@@ -12,17 +12,43 @@ typedef struct {
 
 REGISTER_COMPONENT(score_t);
 
+typedef struct {
+    char name[30];
+} player_name_t;
+
+REGISTER_COMPONENT(player_name_t);
+
 void setup_game() {
-    unsigned long player_id = add_ent();
+    while(1) {
+        printf("Please enter player name.\n");
 
-    score_t score;
-    score.wins = 0;
-    score.losses = 0;
-    score.display = 1;
+        player_name_t player_name;
+        scanf("%s", player_name.name);
 
-    void* score_ptr = &score;
+        unsigned long player_id = add_ent();
 
-    add_score_t(player_id, score_ptr);
+        void* name_ptr = &player_name;
+        add_player_name_t(player_id, name_ptr);
+
+        score_t score;
+        score.wins = 0;
+        score.losses = 0;
+        score.display = 1;
+
+        void* score_ptr = &score;
+        add_score_t(player_id, score_ptr);
+
+        printf("Would you like to add a new player? [y/n]\n");
+
+        char add_player;
+        scanf("%s", &add_player);
+
+        if (add_player == 'y') {
+            continue;
+        }
+
+        break;
+    }
 
     srand(time(NULL));
 }
@@ -32,21 +58,21 @@ REGISTER_SYSTEM(setup_game, SETUP);
 extern int should_exit;
 
 void update_game() {
-    signature_t filter = id_to_sig(score_t_id);
+    signature_t filter = CREATE_SIG(score_t, player_name_t);
     entity_t* list = filter_entities(filter);
+    free(filter);
 
     entity_t* ent = list;
     while (*ent != NULL) {
-        score_t* score = get_comp_from_ent(*ent, score_t_id);
+        score_t* score = get_comp_from_ent(*ent, GET_ID(score_t));
+        player_name_t* name = get_comp_from_ent(*ent, GET_ID(player_name_t));
 
         int n1 = rand() % 100;
         int n2 = rand() % 100;
 
-        printf("Please answer the following:\n");
-        printf("%d + %d = ", n1, n2);
+        printf("%s: %d + %d = ", name->name, n1, n2);
         
         int answer;
-
         scanf("%d", &answer);
 
         if (answer == n1 + n2) {
@@ -67,14 +93,14 @@ void update_game() {
     }
 
     free(list);
-    list = NULL;
 }
 
 REGISTER_SYSTEM(update_game, UPDATE);
 
 void print_scores() {
-    signature_t filter = id_to_sig(score_t_id);
+    signature_t filter = GET_SIG(score_t);
     entity_t* list = filter_entities(filter);
+    free(filter);
 
     entity_t* ent = list;
     while (*ent != NULL) {
@@ -86,7 +112,6 @@ void print_scores() {
     }
 
     free(list);
-    list = NULL;
 }
 
 REGISTER_SYSTEM(print_scores, POST_UPDATE);

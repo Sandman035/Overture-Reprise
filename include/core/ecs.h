@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "macros.h"
 
 typedef unsigned char* signature_t;
 typedef void* component_t;
@@ -29,7 +30,18 @@ entity_t* filter_entities(signature_t filter);
 //tools
 signature_t id_to_sig(unsigned long id);
 void add_sig(signature_t s1, const signature_t s2);
-// todo: more
+
+signature_t create_sig(int n, ...);
+
+#define GET_ID(component_struct) ({extern unsigned long component_struct ## _id; component_struct ## _id;})
+#define GET_SIG(component_struct) id_to_sig(GET_ID(component_struct))
+
+#define X_ID(X) GLUE(X,_id)
+#define ID_DECLARE(...) extern unsigned long __VA_ARGS__
+#define CREATE_SIG(...) ({ \
+    EVAL(ID_DECLARE TRANSFORM(X_ID,(__VA_ARGS__))); \
+    create_sig(VARCOUNT(__VA_ARGS__), TRANSFORM(X_ID,(__VA_ARGS__))); \
+})
 
 // TODO: serialize and deserialize component structs (maybe using X macros)
 // https://natecraun.net/articles/struct-iteration-through-abuse-of-the-c-preprocessor.html 

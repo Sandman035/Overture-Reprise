@@ -1,6 +1,7 @@
 #include "core/ecs.h"
 
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -47,6 +48,28 @@ signature_t id_to_sig(unsigned long id) {
             break;
         }
     }
+    return signature;
+}
+
+signature_t create_sig(int n, ...) {
+    signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
+
+    va_list args;
+    va_start(args, n);
+
+    for (int i = 0; i < n; ++i) {
+        int n = comp_num / CHAR_BIT + 1;
+        while (n--) {
+            unsigned long curr_num = va_arg(args, unsigned long) - (n * CHAR_BIT);
+            if (curr_num > 0) {
+                signature[n] |= (1 << (curr_num - 1));
+                break;
+            }
+        }
+    }
+
+    va_end(args);
+
     return signature;
 }
 
