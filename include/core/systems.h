@@ -17,14 +17,10 @@ typedef enum {
 #define REGISTER_SYSTEM(system, schedule) \
     __attribute__((constructor)) \
     void add_ ## system() { \
-        add_system(system, schedule); \
+        register_system(system, schedule); \
     }
-
-void init_systems();
 
 void register_system(system_ptr_t system, schedule_t schedule);
 void run_systems(schedule_t schedule);
-
-void add_system(system_ptr_t system, schedule_t schedule);
 
 #endif

@@ -27,6 +27,13 @@ void remove_comp(unsigned long ent_id, unsigned long comp_id);
 
 entity_t* filter_entities(signature_t filter);
 
+#define FILTER_ENTITIES(...) ({ \
+    signature_t filter = CREATE_SIG(__VA_ARGS__); \
+    entity_t* list = filter_entities(filter); \
+    free(filter); \
+    list; \
+})
+
 //tools
 signature_t id_to_sig(unsigned long id);
 void add_sig(signature_t s1, const signature_t s2);

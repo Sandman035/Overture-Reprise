@@ -4,9 +4,6 @@
 int should_exit = 0;
 
 int main() {
-    // initialize everything
-    init_systems();
-
     run_systems(SETUP);
     
     while (!should_exit) {
@@ -20,6 +17,4 @@ int main() {
     }
 
     run_systems(CLEANUP);
-
-    // cleanup everything else
 }

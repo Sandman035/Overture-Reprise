@@ -58,9 +58,7 @@ REGISTER_SYSTEM(setup_game, SETUP);
 extern int should_exit;
 
 void update_game() {
-    signature_t filter = CREATE_SIG(score_t, player_name_t);
-    entity_t* list = filter_entities(filter);
-    free(filter);
+    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
 
     entity_t* ent = list;
     while (*ent != NULL) {
@@ -98,9 +96,7 @@ void update_game() {
 REGISTER_SYSTEM(update_game, UPDATE);
 
 void print_scores() {
-    signature_t filter = GET_SIG(score_t);
-    entity_t* list = filter_entities(filter);
-    free(filter);
+    entity_t* list = FILTER_ENTITIES(score_t);
 
     entity_t* ent = list;
     while (*ent != NULL) {

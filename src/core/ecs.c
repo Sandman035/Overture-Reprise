@@ -5,15 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static entity_t* entity_list = NULL;
-static signature_t* signature_list = NULL;
+typedef struct entity_node_t {
+    unsigned long id;
+    entity_t entity;
+    signature_t signature;
+    struct entity_node_t* next;
+} entity_node_t;
+
+entity_node_t* entity_head = NULL;
 
 static unsigned long ent_num = 0;
 static unsigned long comp_num = 0;
 
 // TODO: IMPORTANT: error handling in case realloc doesn't work use tmp ptrs before moving pointer
 
-// idk if const does anything due to pointer nature of signature_t
 void add_sig(signature_t s1, const signature_t s2) {
     int n = comp_num / CHAR_BIT + 1;
     while (n--) {
@@ -76,41 +81,59 @@ signature_t create_sig(int n, ...) {
 unsigned long register_new_comp() {
     comp_num++;
 
-    for (unsigned long i = 0; i < ent_num; i++) {
-        if (entity_list[i] == NULL) {
-            continue;
-        }
-
-        entity_list[i] = realloc(entity_list[i], comp_num * sizeof(component_t));
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        temp->entity = realloc(temp->entity, comp_num * sizeof(component_t));
 
         // maybe we should only realloc when signature overflows
-        signature_list[i] = realloc(signature_list[i], (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
+        temp->signature = realloc(temp->signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
+        temp = temp->next;
     }
 
     return comp_num;
 }
 
 void add_comp(unsigned long ent_id, unsigned long comp_id, void *data, size_t size) {
-    if (entity_list[ent_id] == NULL || ent_id > ent_num) {
-        printf("Entity %ld does not exist.\n", ent_id);
-        return;
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->id == ent_id) {
+            //malloc and memcpy might not be necessary although its a good safeguard maybe idk
+            void* data_ptr = malloc(size);
+            memcpy(data_ptr, data, size);
+            temp->entity[comp_id - 1] = data_ptr;
+
+            signature_t comp_sig = id_to_sig(comp_id);
+            signature_t ent_sig = temp->signature;
+
+            add_sig(ent_sig, comp_sig);
+
+            free(comp_sig);
+
+            return;
+        }
+        temp = temp->next;
     }
-    //malloc and memcpy might not be necessary although its a good safeguard maybe idk
-    void* data_ptr = malloc(size);
-    memcpy(data_ptr, data, size);
-    entity_list[ent_id][comp_id - 1] = data_ptr;
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = signature_list[ent_id];
-
-    add_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
+    printf("Entity %ld does not exist.\n", ent_id);
+    return;
 }
 
 component_t get_comp(unsigned long ent_id, unsigned long comp_id) {
-    if (has_comp(ent_id, comp_id)) {
-        return entity_list[ent_id][comp_id - 1];
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->id == ent_id) {
+            signature_t comp_sig = id_to_sig(comp_id);
+            signature_t ent_sig = temp->signature;
+
+            int result = contains_sig(ent_sig, comp_sig);
+
+            free(comp_sig);
+
+            if (result) {
+                return temp->entity[comp_id - 1];
+            }
+        }
+        temp = temp->next;
     }
 
     return NULL;
@@ -121,92 +144,132 @@ component_t get_comp_from_ent(entity_t ent, unsigned long comp_id) {
 }
 
 void remove_comp(unsigned long ent_id, unsigned long comp_id) {
-    if (entity_list[ent_id] == NULL || ent_id > ent_num) {
-        printf("Entity %ld does not exist.\n", ent_id);
-        return;
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->id == ent_id) {
+            free(temp->entity[comp_id - 1]);
+            temp->entity[comp_id - 1] = NULL;
+
+            signature_t comp_sig = id_to_sig(comp_id);
+            signature_t ent_sig = temp->signature;
+
+            remove_sig(ent_sig, comp_sig);
+
+            free(comp_sig);
+
+            return;
+        }
+        temp = temp->next;
     }
 
-    free(entity_list[ent_id][comp_id - 1]);
-    entity_list[ent_id][comp_id - 1] = NULL;
-
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = signature_list[ent_id];
-
-    remove_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
+    printf("Entity %ld does not exist.\n", ent_id);
+    return;
 }
 
 int has_comp(unsigned long ent_id, unsigned long comp_id) {
-    if (entity_list[ent_id] == NULL || ent_id > ent_num) {
-        printf("Entity %ld does not exist.\n", ent_id);
-        return 0;
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->id == ent_id) {
+            signature_t comp_sig = id_to_sig(comp_id);
+            signature_t ent_sig = temp->signature;
+
+            int result = contains_sig(ent_sig, comp_sig);
+
+            free(comp_sig);
+
+            return result;
+        }
+        temp = temp->next;
     }
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = signature_list[ent_id];
-
-    int result = contains_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
-
-    return result;
+    printf("Entity %ld does not exist.\n", ent_id);
+    return 0;
 }
 
 /// returns new entity index
 unsigned long add_ent() {
+    entity_node_t* node = malloc(sizeof(entity_node_t));
+    node->id = ent_num;
+    node->entity = calloc(comp_num, sizeof(component_t));
+    node->signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
+    node->next = NULL;
+
     ent_num++;
 
-    entity_list = realloc(entity_list, ent_num * sizeof(entity_t));
-    entity_list[ent_num - 1] = calloc(comp_num, sizeof(component_t));
+    if (entity_head == NULL) {
+        entity_head = node;
+        return ent_num - 1;
+    }
 
-    signature_list = realloc(signature_list, ent_num * sizeof(entity_t));
-    signature_list[ent_num - 1] = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
+    entity_node_t* temp = entity_head;
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+
+    temp->next = node;
 
     return ent_num - 1;
 }
 
 entity_t get_ent(unsigned long id) {
-    if (entity_list[id] == NULL || id > ent_num) {
-        printf("Entity %ld does not exist.\n", id);
-        return NULL;
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->id == id) {
+            return temp->entity;
+        }
+        temp = temp->next;
     }
-    return entity_list[id];
+
+    printf("Entity %ld does not exist.\n", id);
+    return NULL;
 }
 
 void remove_ent(unsigned long id) {
-    if (entity_list[id] == NULL || id > ent_num) {
-        printf("Entity %ld does not exist.\n", id);
-        return;
-    }
-    
-    unsigned long n = comp_num;
-    while (n--) {
-        // TEST: remove entity partially filled with components
-        // maybe previous calloc wont work we'll see
-        free(entity_list[id][n]);
-        entity_list[id][n] = NULL;
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (temp->next->id == id) {
+            entity_node_t* ent = temp->next;
+
+            unsigned long n = comp_num;
+            while (n--) {
+                free(ent->entity[n]);
+                ent->entity[n] = NULL;
+            }
+            free(ent->signature);
+            ent->signature = NULL;
+
+            temp->next = ent->next;
+
+            free(ent);
+            ent = NULL;
+            return;
+        }
+        temp = temp->next;
     }
 
-    free(entity_list[id]);
-    entity_list[id] = NULL;
+    printf("Entity %ld does not exist.\n", id);
+    return;
 }
 
 entity_t* filter_entities(signature_t filter) {
     unsigned long len = 0;
-    for (unsigned long i = 0; i < ent_num; i++) {
-        if (contains_sig(signature_list[i], filter)) {
+    entity_node_t* temp = entity_head;
+    while (temp != NULL) {
+        if (contains_sig(temp->signature, filter)) {
             len += 1;
         }
+        temp = temp->next;
     }
 
     entity_t* list = malloc((len + 1) * sizeof(entity_t));
     
     unsigned long idx = 0;
-    for (unsigned long i = 0; i < ent_num; i++) {
-        if (contains_sig(signature_list[i], filter)) {
-            list[idx++] = entity_list[i];
+    temp = entity_head;
+    while (temp != NULL) {
+        if (contains_sig(temp->signature, filter)) {
+            list[idx++] = temp->entity;
         }
+        temp = temp->next;
     }
 
     list[idx++] = NULL;

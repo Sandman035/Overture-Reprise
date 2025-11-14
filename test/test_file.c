@@ -14,9 +14,7 @@ typedef struct {
 } player_name_t;
 
 void calculate_scores() {
-    signature_t filter = CREATE_SIG(score_t, player_name_t);
-    entity_t* list = filter_entities(filter);
-    free(filter);
+    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
 
     entity_t* ent = list;
     while (*ent != NULL) {
