@@ -43,11 +43,10 @@ signature_t create_sig(int n, ...);
 #define GET_ID(component_struct) ({extern unsigned long component_struct ## _id; component_struct ## _id;})
 #define GET_SIG(component_struct) id_to_sig(GET_ID(component_struct))
 
-#define X_ID(X) GLUE(X,_id)
-#define ID_DECLARE(...) extern unsigned long __VA_ARGS__
+#define X_ID(X) X ## _id
 #define CREATE_SIG(...) ({ \
-    EVAL(ID_DECLARE TRANSFORM(X_ID,(__VA_ARGS__))); \
-    create_sig(VARCOUNT(__VA_ARGS__), TRANSFORM(X_ID,(__VA_ARGS__))); \
+    extern unsigned long MAP_LIST(X_ID,__VA_ARGS__); \
+    create_sig(VARCOUNT(__VA_ARGS__), MAP_LIST(X_ID,__VA_ARGS__)); \
 })
 
 // TODO: serialize and deserialize component structs (maybe using X macros)

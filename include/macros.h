@@ -1,18 +1,19 @@
 #ifndef OVERTURE_MACROS
 #define OVERTURE_MACROS
 
-#define EVAL(...) __VA_ARGS__
+#include "map.h"
+
 #define VARCOUNT(...) \
-   EVAL(VARCOUNT_I(__VA_ARGS__,9,8,7,6,5,4,3,2,1,))
+   EVAL0(VARCOUNT_I(__VA_ARGS__,9,8,7,6,5,4,3,2,1,))
 #define VARCOUNT_I(_,_9,_8,_7,_6,_5,_4,_3,_2,X_,...) X_
 #define GLUE(X,Y) GLUE_I(X,Y)
 #define GLUE_I(X,Y) X##Y
 #define GLUE3(X,Y,Z) GLUE3_I(X,Y,Z)
 #define GLUE3_I(X,Y,Z) X##Y##Z
-#define FIRST(...) EVAL(FIRST_I(__VA_ARGS__,))
-#define FIRST2(...) EVAL(FIRST_I(__VA_ARGS__))
+#define FIRST(...) EVAL0(FIRST_I(__VA_ARGS__,))
+#define FIRST2(...) EVAL0(FIRST_I(__VA_ARGS__))
 #define FIRST_I(X,...) X
-#define TUPLE_TAIL(...) EVAL(TUPLE_TAIL_I(__VA_ARGS__))
+#define TUPLE_TAIL(...) EVAL0(TUPLE_TAIL_I(__VA_ARGS__))
 #define TUPLE_TAIL_I(X,...) (__VA_ARGS__)
 
 #define TRANSFORM(NAME_, ARGS_) (GLUE(TRANSFORM_,VARCOUNT ARGS_)(NAME_, ARGS_))

@@ -1,14 +1,16 @@
 #include "core/ecs.h"
+#include "core/serialize_deserialize.h"
 #include "core/systems.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-typedef struct {
-    int wins;
-    int losses;
-    int display;
-} score_t;
+//typedef struct {
+//    int wins;
+//    int losses;
+//    int display;
+//} score_t;
+CREATE_SERIALIZABLE_STRUCT(score_t, (int, wins), (int, losses), (int, display));
 
 REGISTER_COMPONENT(score_t);
 
@@ -35,7 +37,13 @@ void setup_game() {
         score.losses = 0;
         score.display = 1;
 
-        void* score_ptr = &score;
+        unsigned char buff[score_t_fmt.packed_size];
+        serialize(&score_t_fmt, &score, buff);
+
+        score_t score2;
+        deserialize(&score_t_fmt, buff, &score2);
+
+        void* score_ptr = &score2;
         add_score_t(player_id, score_ptr);
 
         printf("Would you like to add a new player? [y/n]\n");
