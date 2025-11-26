@@ -1,4 +1,5 @@
 #include "core/ecs.h"
+#include "core/log.h"
 
 #include <limits.h>
 #include <stdarg.h>
@@ -90,6 +91,8 @@ unsigned long register_new_comp() {
         temp = temp->next;
     }
 
+    TRACE("Registered component %ld.", comp_num);
+
     return comp_num;
 }
 
@@ -109,12 +112,14 @@ void add_comp(unsigned long ent_id, unsigned long comp_id, void *data, size_t si
 
             free(comp_sig);
 
+            TRACE("Added component %ld to entity %ld.", comp_id, ent_id);
+
             return;
         }
         temp = temp->next;
     }
 
-    printf("Entity %ld does not exist.\n", ent_id);
+    ERROR("Entity %ld does not exist, failed to add component %ld.", ent_id, comp_id);
     return;
 }
 
@@ -130,12 +135,15 @@ component_t get_comp(unsigned long ent_id, unsigned long comp_id) {
             free(comp_sig);
 
             if (result) {
+                TRACE("Retrieved component %ld from entity %ld.", comp_id, ent_id);
                 return temp->entity[comp_id - 1];
             }
+            ERROR("Entity %ld does not contain component %ld.", ent_id, comp_id);
         }
         temp = temp->next;
     }
 
+    ERROR("Entity %ld does not exist.", ent_id, comp_id);
     return NULL;
 }
 
@@ -157,12 +165,14 @@ void remove_comp(unsigned long ent_id, unsigned long comp_id) {
 
             free(comp_sig);
 
+            TRACE("Removed component %ld from entity %ld", comp_id, ent_id);
+
             return;
         }
         temp = temp->next;
     }
 
-    printf("Entity %ld does not exist.\n", ent_id);
+    WARN("Entity %ld does not exist, cannot remove component %ld.", ent_id, comp_id);
     return;
 }
 
@@ -182,7 +192,7 @@ int has_comp(unsigned long ent_id, unsigned long comp_id) {
         temp = temp->next;
     }
 
-    printf("Entity %ld does not exist.\n", ent_id);
+    ERROR("Entity %ld does not exist.", ent_id);
     return 0;
 }
 
@@ -197,6 +207,7 @@ unsigned long add_ent() {
     ent_num++;
 
     if (entity_head == NULL) {
+        TRACE("Created first entity.");
         entity_head = node;
         return ent_num - 1;
     }
@@ -208,6 +219,8 @@ unsigned long add_ent() {
 
     temp->next = node;
 
+    TRACE("Created entity %ld.", ent_num - 1);
+
     return ent_num - 1;
 }
 
@@ -215,12 +228,13 @@ entity_t get_ent(unsigned long id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == id) {
+            TRACE("Retrieved entity %ld.", id);
             return temp->entity;
         }
         temp = temp->next;
     }
 
-    printf("Entity %ld does not exist.\n", id);
+    ERROR("Entity %ld does not exist.", id);
     return NULL;
 }
 
@@ -242,12 +256,14 @@ void remove_ent(unsigned long id) {
 
             free(ent);
             ent = NULL;
+
+            TRACE("Removed entity %ld.", id);
             return;
         }
         temp = temp->next;
     }
 
-    printf("Entity %ld does not exist.\n", id);
+    WARN("Entity %ld does not exist, it cannot be removed.\n", id);
     return;
 }
 
@@ -273,6 +289,8 @@ entity_t* filter_entities(signature_t filter) {
     }
 
     list[idx++] = NULL;
+
+    TRACE("Filtered %ld entities with signature XXXXXXXX.", len);
 
     return list;
 }
