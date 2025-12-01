@@ -1,6 +1,7 @@
 #include "core/systems.h"
 #include "core/log.h"
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -43,12 +44,64 @@ void register_system(system_ptr_t system, schedule_t schedule) {
     TRACE("Registered new system in schedule: %s.", schedules[schedule]);
 }
 
+typedef struct thread_node_t {
+    pthread_t thread;
+    struct thread_node_t* next;
+} thread_node_t;
+
+void* run_system(void* arg) {
+    system_ptr_t system = arg;
+    system();
+    return NULL;
+}
+
 void run_systems(schedule_t schedule) {
     system_node_t* temp = schedule_heads[schedule];
+
     TRACE("Executing systems in schedule: %s.", schedules[schedule]);
-    while (temp != NULL) {
-        temp->system();
-        temp = temp->next;
+
+    int count = 0;
+
+    if (schedule == SETUP || schedule >= RENDER) {
+        while (temp != NULL) {
+            temp->system();
+            temp = temp->next;
+            count++;
+        }
+
+        TRACE("Finished execution of %d systems in schedule: %s.", count, schedules[schedule]);
+        return;
     }
-    TRACE("Finished execution of schedule: %s.", schedules[schedule]);
+
+    thread_node_t* thread_head = NULL;
+    thread_node_t* curr_thread_node = thread_head;
+
+    while (temp != NULL) {
+        thread_node_t* new = malloc(sizeof(thread_node_t));
+        pthread_create(&new->thread, NULL, run_system, temp->system);
+        new->next = NULL;
+
+        if (curr_thread_node == NULL) {
+            curr_thread_node = new;
+        } else {
+            curr_thread_node->next = new;
+            curr_thread_node = curr_thread_node->next;
+        }
+        temp = temp->next;
+        count++;
+    }
+
+    TRACE("Waiting for system threads to finish...");
+
+    while (curr_thread_node != NULL) {
+        pthread_join(curr_thread_node->thread, NULL);
+
+        thread_node_t* next = curr_thread_node->next;
+
+        free(curr_thread_node);
+
+        curr_thread_node = next;
+    }
+
+    TRACE("Finished execution of %d systems in schedule: %s.", count, schedules[schedule]);
 }

@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct entity_node_t {
     unsigned long id;
@@ -43,12 +44,11 @@ static int contains_sig(const signature_t s1, const signature_t s2) {
     return result;
 }
 
-// TEST: larger than 8 values for id, need to have bigger signature as well
 signature_t id_to_sig(unsigned long id) {
     signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
     int n = comp_num / CHAR_BIT + 1;
     while (n--) {
-        unsigned long curr_num = id - (n * CHAR_BIT);
+        long curr_num = id - (n * CHAR_BIT);
         if (curr_num > 0) {
             signature[n] |= (1 << (curr_num - 1));
             break;
@@ -64,11 +64,12 @@ signature_t create_sig(int n, ...) {
     va_start(args, n);
 
     for (int i = 0; i < n; ++i) {
-        int n = comp_num / CHAR_BIT + 1;
-        while (n--) {
-            unsigned long curr_num = va_arg(args, unsigned long) - (n * CHAR_BIT);
+        int n_char = comp_num / CHAR_BIT + 1;
+        unsigned long current_id = va_arg(args, unsigned long);
+        while (n_char--) {
+            long curr_num = current_id - (n_char * CHAR_BIT);
             if (curr_num > 0) {
-                signature[n] |= (1 << (curr_num - 1));
+                signature[n_char] |= (1 << (curr_num - 1));
                 break;
             }
         }
@@ -90,6 +91,7 @@ unsigned long register_new_comp() {
         temp->signature = realloc(temp->signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
         temp = temp->next;
     }
+    DEBUG("Number of bytes in signature: %d", comp_num / CHAR_BIT + 1);
 
     TRACE("Registered component %ld.", comp_num);
 
@@ -290,7 +292,17 @@ entity_t* filter_entities(signature_t filter) {
 
     list[idx++] = NULL;
 
-    TRACE("Filtered %ld entities with signature XXXXXXXX.", len);
+    char buff[100] = "";
+    int n = comp_num / CHAR_BIT + 1;
+    while (n--) {
+        if (n == comp_num / CHAR_BIT) {
+            sprintf(buff,"%s%8.8B", buff, filter[n]);
+            continue;
+        }
+        sprintf(buff,"%s %8.8B", buff, filter[n]);
+    }
+
+    TRACE("Filtered %ld entities with signature %s.", len, buff);
 
     return list;
 }

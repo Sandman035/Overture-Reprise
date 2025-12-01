@@ -13,7 +13,7 @@ const char *levels[] = {
 };
 
 const char *colors[] = {
-  "\x1b[94m", 
+  "\x1b[90m", 
   "\x1b[36m", 
   "\x1b[32m", 
   "\x1b[33m", 
@@ -29,7 +29,7 @@ void print_log(log_level level, const char *file, int line, const char *fmt, ...
     timer = time(NULL);
     tm_info = localtime(&timer);
 
-    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    strftime(buffer, 26, "%F %T", tm_info);
 
     fprintf(stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ", buffer, colors[level], levels[level], file, line);
 
