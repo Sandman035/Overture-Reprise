@@ -1,9 +1,11 @@
-#include "core/ecs.h"
-#include "core/serialize_deserialize.h"
-#include "core/systems.h"
+#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include "core/ecs.h"
+#include "core/serialize_deserialize.h"
+#include "core/systems.h"
 
 //typedef struct {
 //    int wins;
@@ -57,6 +59,8 @@ void setup_game() {
 
         break;
     }
+
+    unsigned long new_ent = add_ent();
 
     srand(time(NULL));
 }

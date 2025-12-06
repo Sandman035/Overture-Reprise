@@ -1,14 +1,7 @@
-/*
- * map-macro by William R Swanson is marked with CC0 1.0 Universal.
- *
- * To view a copy of this license,
- * visit https://creativecommons.org/publicdomain/zero/1.0/
- */
-
 //https://github.com/swansontec/map-macro/blob/master/map.h
 
-#ifndef MAP_H_INCLUDED
-#define MAP_H_INCLUDED
+#ifndef MAP_H
+#define MAP_H
 
 #define EVAL0(...) __VA_ARGS__
 #define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
@@ -474,5 +467,8 @@
 #define MAP_INC_364 365
 #define MAP_INC_365 366
 
+#define VARCOUNT(...) \
+   EVAL0(VARCOUNT_I(__VA_ARGS__,9,8,7,6,5,4,3,2,1,))
+#define VARCOUNT_I(_,_9,_8,_7,_6,_5,_4,_3,_2,X_,...) X_
 
 #endif

@@ -8,7 +8,9 @@ typedef enum {
     PRE_UPDATE,
     UPDATE,
     POST_UPDATE,
+    PRE_RENDER,
     RENDER,
+    POST_RENDER,
     CLEANUP,
     NUM_OF_SCHEDULES
 } schedule_t;
@@ -21,6 +23,7 @@ typedef enum {
     }
 
 void register_system(system_ptr_t system, schedule_t schedule);
-void run_systems(schedule_t schedule);
+void run_systems_sequential(schedule_t schedule);
+void run_systems_parrallel(schedule_t schedule);
 
 #endif

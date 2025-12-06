@@ -8,9 +8,9 @@ typedef enum {
     LEVEL_WARN,
     LEVEL_ERROR,
     LEVEL_FATAL
-} log_level;
+} log_level_t;
 
-void print_log(log_level level, const char* file, int line, const char* fmt, ...);
+void print_log(log_level_t level, const char* file, int line, const char* fmt, ...);
 
 #define TRACE(...) print_log(LEVEL_TRACE, __FILE__, __LINE__, __VA_ARGS__)
 #define DEBUG(...) print_log(LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)

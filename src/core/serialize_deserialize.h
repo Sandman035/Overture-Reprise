@@ -1,8 +1,9 @@
 #ifndef SERDE_OVERTURE
 #define SERDE_OVERTURE
 
-#include "map.h"
+#include "macros.h"
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 // inspired by https://natecraun.net/articles/struct-iteration-through-abuse-of-the-c-preprocessor.html

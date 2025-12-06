@@ -2,6 +2,7 @@
 #include "core/log.h"
 
 #include <pthread.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -10,7 +11,7 @@ typedef struct system_node_t {
     struct system_node_t* next;
 } system_node_t;
 
-system_node_t* schedule_heads[NUM_OF_SCHEDULES];
+static system_node_t* schedule_heads[NUM_OF_SCHEDULES];
 
 // maybe figure out a way to automatically update this with macros or smt
 const char* schedules[] = {
@@ -18,7 +19,9 @@ const char* schedules[] = {
     "PRE_UPDATE",
     "UPDATE",
     "POST_UPDATE",
+    "PRE_RENDER",
     "RENDER",
+    "POST_RENDER",
     "CLEANUP"
 };
 
@@ -44,6 +47,21 @@ void register_system(system_ptr_t system, schedule_t schedule) {
     TRACE("Registered new system in schedule: %s.", schedules[schedule]);
 }
 
+void run_systems_sequential(schedule_t schedule) {
+    system_node_t* temp = schedule_heads[schedule];
+
+    TRACE("Executing systems in schedule: %s.", schedules[schedule]);
+
+    uint32_t count = 0;
+    while (temp != NULL) {
+        temp->system();
+        temp = temp->next;
+        count++;
+    }
+
+    TRACE("Finished execution of %d systems in schedule: %s.", count, schedules[schedule]);
+}
+
 typedef struct thread_node_t {
     pthread_t thread;
     struct thread_node_t* next;
@@ -55,23 +73,12 @@ void* run_system(void* arg) {
     return NULL;
 }
 
-void run_systems(schedule_t schedule) {
+void run_systems_parrallel(schedule_t schedule) {
     system_node_t* temp = schedule_heads[schedule];
 
     TRACE("Executing systems in schedule: %s.", schedules[schedule]);
 
-    int count = 0;
-
-    if (schedule == SETUP || schedule >= RENDER) {
-        while (temp != NULL) {
-            temp->system();
-            temp = temp->next;
-            count++;
-        }
-
-        TRACE("Finished execution of %d systems in schedule: %s.", count, schedules[schedule]);
-        return;
-    }
+    uint32_t count = 0;
 
     thread_node_t* thread_head = NULL;
     thread_node_t* curr_thread_node = thread_head;

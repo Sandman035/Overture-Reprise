@@ -4,39 +4,40 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct entity_node_t {
-    unsigned long id;
+    uint64_t id;
     entity_t entity;
     signature_t signature;
     struct entity_node_t* next;
 } entity_node_t;
 
-entity_node_t* entity_head = NULL;
+static entity_node_t* entity_head = NULL;
 
-static unsigned long ent_num = 0;
-static unsigned long comp_num = 0;
+static uint64_t ent_num = 0;
+static uint64_t comp_num = 0;
 
 // TODO: IMPORTANT: error handling in case realloc doesn't work use tmp ptrs before moving pointer
 
 void add_sig(signature_t s1, const signature_t s2) {
-    int n = comp_num / CHAR_BIT + 1;
+    uint64_t n = comp_num / CHAR_BIT + 1;
     while (n--) {
         s1[n] |= s2[n];
     }
 }
 
 static void remove_sig(signature_t s1, const signature_t s2) {
-    int n = comp_num / CHAR_BIT + 1;
+    uint64_t n = comp_num / CHAR_BIT + 1;
     while (n--) {
         s1[n] &= ~s2[n];
     }
 }
 
 static int contains_sig(const signature_t s1, const signature_t s2) {
-    int n = comp_num / CHAR_BIT + 1;
+    uint64_t n = comp_num / CHAR_BIT + 1;
     int result = 0;
     while (n--) {
         result |= s1[n] & s2[n];
@@ -44,9 +45,9 @@ static int contains_sig(const signature_t s1, const signature_t s2) {
     return result;
 }
 
-signature_t id_to_sig(unsigned long id) {
+signature_t id_to_sig(uint64_t id) {
     signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
-    int n = comp_num / CHAR_BIT + 1;
+    uint64_t n = comp_num / CHAR_BIT + 1;
     while (n--) {
         long curr_num = id - (n * CHAR_BIT);
         if (curr_num > 0) {
@@ -57,15 +58,15 @@ signature_t id_to_sig(unsigned long id) {
     return signature;
 }
 
-signature_t create_sig(int n, ...) {
+signature_t create_sig(uint32_t n, ...) {
     signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
 
     va_list args;
     va_start(args, n);
 
-    for (int i = 0; i < n; ++i) {
-        int n_char = comp_num / CHAR_BIT + 1;
-        unsigned long current_id = va_arg(args, unsigned long);
+    for (uint32_t i = 0; i < n; ++i) {
+        uint64_t n_char = comp_num / CHAR_BIT + 1;
+        uint64_t current_id = va_arg(args, uint64_t);
         while (n_char--) {
             long curr_num = current_id - (n_char * CHAR_BIT);
             if (curr_num > 0) {
@@ -80,7 +81,7 @@ signature_t create_sig(int n, ...) {
     return signature;
 }
 
-unsigned long register_new_comp() {
+uint64_t register_new_comp() {
     comp_num++;
 
     entity_node_t* temp = entity_head;
@@ -91,14 +92,13 @@ unsigned long register_new_comp() {
         temp->signature = realloc(temp->signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
         temp = temp->next;
     }
-    DEBUG("Number of bytes in signature: %d", comp_num / CHAR_BIT + 1);
 
     TRACE("Registered component %ld.", comp_num);
 
     return comp_num;
 }
 
-void add_comp(unsigned long ent_id, unsigned long comp_id, void *data, size_t size) {
+void add_comp(uint64_t ent_id, uint64_t comp_id, void *data, size_t size) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == ent_id) {
@@ -125,7 +125,7 @@ void add_comp(unsigned long ent_id, unsigned long comp_id, void *data, size_t si
     return;
 }
 
-component_t get_comp(unsigned long ent_id, unsigned long comp_id) {
+component_t get_comp(uint64_t ent_id, uint64_t comp_id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == ent_id) {
@@ -149,11 +149,11 @@ component_t get_comp(unsigned long ent_id, unsigned long comp_id) {
     return NULL;
 }
 
-component_t get_comp_from_ent(entity_t ent, unsigned long comp_id) {
+component_t get_comp_from_ent(entity_t ent, uint64_t comp_id) {
     return ent[comp_id - 1];
 }
 
-void remove_comp(unsigned long ent_id, unsigned long comp_id) {
+void remove_comp(uint64_t ent_id, uint64_t comp_id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == ent_id) {
@@ -178,7 +178,7 @@ void remove_comp(unsigned long ent_id, unsigned long comp_id) {
     return;
 }
 
-int has_comp(unsigned long ent_id, unsigned long comp_id) {
+int has_comp(uint64_t ent_id, uint64_t comp_id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == ent_id) {
@@ -199,7 +199,7 @@ int has_comp(unsigned long ent_id, unsigned long comp_id) {
 }
 
 /// returns new entity index
-unsigned long add_ent() {
+uint64_t add_ent() {
     entity_node_t* node = malloc(sizeof(entity_node_t));
     node->id = ent_num;
     node->entity = calloc(comp_num, sizeof(component_t));
@@ -226,7 +226,7 @@ unsigned long add_ent() {
     return ent_num - 1;
 }
 
-entity_t get_ent(unsigned long id) {
+entity_t get_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->id == id) {
@@ -240,13 +240,13 @@ entity_t get_ent(unsigned long id) {
     return NULL;
 }
 
-void remove_ent(unsigned long id) {
+void remove_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (temp->next->id == id) {
             entity_node_t* ent = temp->next;
 
-            unsigned long n = comp_num;
+            uint64_t n = comp_num;
             while (n--) {
                 free(ent->entity[n]);
                 ent->entity[n] = NULL;
@@ -270,7 +270,7 @@ void remove_ent(unsigned long id) {
 }
 
 entity_t* filter_entities(signature_t filter) {
-    unsigned long len = 0;
+    uint64_t len = 0;
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
         if (contains_sig(temp->signature, filter)) {
@@ -281,7 +281,7 @@ entity_t* filter_entities(signature_t filter) {
 
     entity_t* list = malloc((len + 1) * sizeof(entity_t));
     
-    unsigned long idx = 0;
+    uint64_t idx = 0;
     temp = entity_head;
     while (temp != NULL) {
         if (contains_sig(temp->signature, filter)) {
@@ -293,7 +293,7 @@ entity_t* filter_entities(signature_t filter) {
     list[idx++] = NULL;
 
     char buff[100] = "";
-    int n = comp_num / CHAR_BIT + 1;
+    uint64_t n = comp_num / CHAR_BIT + 1;
     while (n--) {
         if (n == comp_num / CHAR_BIT) {
             sprintf(buff,"%s%8.8B", buff, filter[n]);

@@ -21,7 +21,7 @@ const char *colors[] = {
   "\x1b[35m"
 };
 
-void print_log(log_level level, const char *file, int line, const char *fmt, ...) {
+void print_log(log_level_t level, const char *file, int line, const char *fmt, ...) {
     time_t timer;
     char buffer[26];
     struct tm* tm_info;
