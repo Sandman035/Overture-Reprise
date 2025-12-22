@@ -7,9 +7,17 @@
 #include <string.h>
 #include "macros.h"
 
+/*
+ * TODO: maybe have an entity struct that contains both the component list and signature then
+ *       every time either an ent_id or an entity_t is need this new struct can be passed
+ *       streamlining the process
+ *
+ *       this requires a full rework of the ecs
+ */
+
 typedef uint8_t* signature_t;
 typedef void* component_t;
-typedef void** entity_t; // ptr to a void*
+typedef component_t* entity_t; // ptr to a void*
 
 // component registration funcs and other tools
 uint64_t register_new_comp();
@@ -35,9 +43,7 @@ entity_t* filter_entities(signature_t filter);
     list; \
 })
 
-//tools
 signature_t id_to_sig(uint64_t id);
-void add_sig(signature_t s1, const signature_t s2);
 
 signature_t create_sig(uint32_t n, ...);
 
@@ -49,10 +55,6 @@ signature_t create_sig(uint32_t n, ...);
     extern uint64_t MAP_LIST(X_ID,__VA_ARGS__); \
     create_sig(VARCOUNT(__VA_ARGS__), MAP_LIST(X_ID,__VA_ARGS__)); \
 })
-
-// TODO: serialize and deserialize component structs (maybe using X macros)
-// https://natecraun.net/articles/struct-iteration-through-abuse-of-the-c-preprocessor.html 
-// will need to expand this to include arrays
 
 // using ddlexport on win add_struct_name will be called using dlsym well on linux
 #define REGISTER_COMPONENT(struct_name) \

@@ -480,8 +480,6 @@ void setup_vulkan_window(window_t* window) {
 
     TRACE("Created command pool and buffer.");
 
-    /* seamaphores temp maybe */
-
     VkSemaphoreCreateInfo semaphore_info;
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphore_info.flags = 0;
@@ -637,6 +635,22 @@ void cleanup_vulkan_window(window_t* window) {
 
     vkDestroyRenderPass(window->vulkan_info.device, window->vulkan_info.render_pass, NULL);
 
+    destroy_swapchain(window);
+
+    vkDestroySurfaceKHR(instance, window->vulkan_info.surface, NULL);
+
+    vkDestroyDevice(window->vulkan_info.device, NULL);
+}
+
+void recreate_swapchain(window_t *window) {
+    vkDeviceWaitIdle(window->vulkan_info.device);
+
+    destroy_swapchain(window);
+
+    /* TODO: recreate swapchain */
+}
+
+void destroy_swapchain(window_t *window) {
     for (uint32_t i = 0; i < window->vulkan_info.image_count; i++) {
         vkDestroyImageView(window->vulkan_info.device, window->vulkan_info.image_views[i], NULL);
         vkDestroyFramebuffer(window->vulkan_info.device, window->vulkan_info.framebuffers[i], NULL);
@@ -647,10 +661,6 @@ void cleanup_vulkan_window(window_t* window) {
     free(window->vulkan_info.framebuffers);
 
     vkDestroySwapchainKHR(window->vulkan_info.device, window->vulkan_info.swap_chain, NULL);
-
-    vkDestroySurfaceKHR(instance, window->vulkan_info.surface, NULL);
-
-    vkDestroyDevice(window->vulkan_info.device, NULL);
 }
 
 void cleanup_vulkan() {
@@ -847,9 +857,8 @@ void destroy_pipeline(window_t* window, pipeline_t* pipeline) {
     vkDestroyPipelineLayout(window->vulkan_info.device, pipeline->layout, NULL);
 }
 
-void create_vertex_buffer(window_t* window, vertex_buffer_t* vertex_buffer, void* verticies, size_t size) {
+void create_vertex_buffer(window_t* window, buffer_t* vertex_buffer, void* verticies, size_t size) {
     VkDeviceSize buffer_size = size;
-    INFO("Buffer size: %d.", buffer_size);
 
     VkBuffer staging_buffer;
     VkDeviceMemory staging_mem;
@@ -989,8 +998,155 @@ void create_vertex_buffer(window_t* window, vertex_buffer_t* vertex_buffer, void
     vkFreeMemory(window->vulkan_info.device, staging_mem, NULL);
 }
 
-void destroy_vertex_buffer(window_t* window, vertex_buffer_t* vertex_buffer) {
+void destroy_vertex_buffer(window_t* window, buffer_t* vertex_buffer) {
     vkDeviceWaitIdle(window->vulkan_info.device);
     vkDestroyBuffer(window->vulkan_info.device, vertex_buffer->buffer, NULL);
     vkFreeMemory(window->vulkan_info.device, vertex_buffer->memory, NULL);
+}
+
+void create_index_buffer(window_t* window, buffer_t* index_buffer, void* indicies, size_t size) {
+    VkDeviceSize buffer_size = size;
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_mem;
+    
+    VkBufferCreateInfo staging_buff_info;
+    staging_buff_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    staging_buff_info.size = buffer_size;
+    staging_buff_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    staging_buff_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    staging_buff_info.pQueueFamilyIndices = NULL;
+    staging_buff_info.flags = 0;
+    staging_buff_info.pNext = NULL;
+
+    if (vkCreateBuffer(window->vulkan_info.device, &staging_buff_info, NULL, &staging_buffer) != VK_SUCCESS) {
+        ERROR("Failed to create buffer.");
+    }
+
+    VkMemoryRequirements staging_mem_requirements;
+    vkGetBufferMemoryRequirements(window->vulkan_info.device, staging_buffer, &staging_mem_requirements);
+
+    VkMemoryAllocateInfo staging_alloc_info;
+    staging_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    staging_alloc_info.allocationSize = staging_mem_requirements.size;
+    staging_alloc_info.pNext = NULL;
+
+    VkPhysicalDeviceMemoryProperties staging_mem_props;
+    vkGetPhysicalDeviceMemoryProperties(window->vulkan_info.physical_device, &staging_mem_props);
+
+    uint32_t staging_mem_type_index = 0;
+    for (uint32_t i = 0; i < staging_mem_props.memoryTypeCount; i++) {
+        if ((staging_mem_requirements.memoryTypeBits & (1 << i)) && (staging_mem_props.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) == (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+            staging_mem_type_index = i;
+            break;
+        }
+    }
+    staging_alloc_info.memoryTypeIndex = staging_mem_type_index;
+
+    if (vkAllocateMemory(window->vulkan_info.device, &staging_alloc_info, NULL, &staging_mem) != VK_SUCCESS) {
+        ERROR("Failed to allocate buffer memory.");
+    }
+
+    vkBindBufferMemory(window->vulkan_info.device, staging_buffer, staging_mem, 0);
+
+    TRACE("Created staging index buffer.");
+
+    void* data;
+    vkMapMemory(window->vulkan_info.device, staging_mem, 0, buffer_size, 0, &data);
+        memcpy(data, indicies, (size_t) buffer_size);
+    vkUnmapMemory(window->vulkan_info.device, staging_mem);
+
+    VkBufferCreateInfo buff_info;
+    buff_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buff_info.size = buffer_size;
+    buff_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    buff_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buff_info.pQueueFamilyIndices = NULL;
+    buff_info.flags = 0;
+    buff_info.pNext = NULL;
+
+    if (vkCreateBuffer(window->vulkan_info.device, &buff_info, NULL, &index_buffer->buffer) != VK_SUCCESS) {
+        ERROR("Failed to create buffer.");
+    }
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(window->vulkan_info.device, index_buffer->buffer, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.pNext = NULL;
+
+    VkPhysicalDeviceMemoryProperties mem_props;
+    vkGetPhysicalDeviceMemoryProperties(window->vulkan_info.physical_device, &mem_props);
+
+    uint32_t mem_type_index = 0;
+    for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+        if ((mem_requirements.memoryTypeBits & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            mem_type_index = i;
+            break;
+        }
+    }
+    alloc_info.memoryTypeIndex = mem_type_index;
+
+    if (vkAllocateMemory(window->vulkan_info.device, &alloc_info, NULL, &index_buffer->memory) != VK_SUCCESS) {
+        ERROR("Failed to allocate buffer memory.");
+    }
+
+    vkBindBufferMemory(window->vulkan_info.device, index_buffer->buffer, index_buffer->memory, 0);
+
+    TRACE("Created index buffer.");
+
+    VkCommandBufferAllocateInfo command_buffer_alloc_info;
+    command_buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    command_buffer_alloc_info.commandPool = window->vulkan_info.command_pool;
+    command_buffer_alloc_info.commandBufferCount = 1;
+    command_buffer_alloc_info.pNext = NULL;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(window->vulkan_info.device, &command_buffer_alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+    begin_info.pNext = NULL;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    VkBufferCopy copyRegion;
+    copyRegion.size = buffer_size;
+    copyRegion.dstOffset = 0;
+    copyRegion.srcOffset = 0;
+    vkCmdCopyBuffer(command_buffer, staging_buffer, index_buffer->buffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &command_buffer;
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pSignalSemaphores = NULL;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = NULL;
+    submitInfo.pWaitDstStageMask = NULL;
+    submitInfo.pNext = NULL;
+
+    vkQueueSubmit(window->vulkan_info.graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(window->vulkan_info.graphics_queue);
+
+    vkFreeCommandBuffers(window->vulkan_info.device, window->vulkan_info.command_pool, 1, &command_buffer);
+
+    TRACE("Copied staging buffer into vertex buffer.");
+
+    vkDestroyBuffer(window->vulkan_info.device, staging_buffer, NULL);
+    vkFreeMemory(window->vulkan_info.device, staging_mem, NULL);
+}
+
+void destroy_index_buffer(window_t* window, buffer_t* index_buffer) {
+    vkDeviceWaitIdle(window->vulkan_info.device);
+    vkDestroyBuffer(window->vulkan_info.device, index_buffer->buffer, NULL);
+    vkFreeMemory(window->vulkan_info.device, index_buffer->memory, NULL);
 }

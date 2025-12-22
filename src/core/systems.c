@@ -33,7 +33,7 @@ void register_system(system_ptr_t system, schedule_t schedule) {
 
     if (schedule_heads[schedule] == NULL) {
         schedule_heads[schedule] = node;
-        TRACE("Registered first system in schedule: %s.", schedules[schedule]);
+        TRACE("Registered system %p in schedule: %s.", system, schedules[schedule]);
         return;
     }
 
@@ -44,7 +44,7 @@ void register_system(system_ptr_t system, schedule_t schedule) {
 
     temp->next = node;
 
-    TRACE("Registered new system in schedule: %s.", schedules[schedule]);
+    TRACE("Registered system %p in schedule: %s.", system, schedules[schedule]);
 }
 
 void run_systems_sequential(schedule_t schedule) {

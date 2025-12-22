@@ -10,7 +10,7 @@
 typedef struct {
     window_t* window;
     pipeline_t pipeline;
-    buffer_t vertex_buffer;
+    vertex_buffer_t vertex_buffer;
 } triangle_t;
 
 REGISTER_COMPONENT(triangle_t);
@@ -26,40 +26,52 @@ const vertex_t vertices[] = {
     {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 };
 
-void setup_triangle() {
-    unsigned long win_ent = add_ent();
+const vertex_t vertices2[] = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 1.0f}},
+    {{0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}}
+};
 
-    window_t window = create_window();
+void setup_multi_win() {
+    for (int i = 0; i < 3; i++) {
+        unsigned long win_ent = add_ent();
 
-    extern void add_window_t(unsigned long, void*);
-    add_window_t(win_ent, &window);
+        window_t window = create_window();
 
-    unsigned long tri_ent = add_ent();
+        extern void add_window_t(unsigned long, void*);
+        add_window_t(win_ent, &window);
 
-    vertex_binding_t binding;
-    binding.binding_description = (VkVertexInputBindingDescription) {0, sizeof(vertex_t), VK_VERTEX_INPUT_RATE_VERTEX};
-    binding.attribute_count = 2;
-    VkVertexInputAttributeDescription attrib_desc[] = {
-        {0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(vertex_t, pos)},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex_t, color)}
-    };
-    binding.attribute_description = attrib_desc;
+        unsigned long tri_ent = add_ent();
 
-    triangle_t triangle;
-    triangle.window = get_comp(win_ent, GET_ID(window_t));
-    create_pipeline(&window, &triangle.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
+        vertex_binding_t binding;
+        binding.binding_description = (VkVertexInputBindingDescription) {0, sizeof(vertex_t), VK_VERTEX_INPUT_RATE_VERTEX};
+        binding.attribute_count = 2;
+        VkVertexInputAttributeDescription attrib_desc[] = {
+            {0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(vertex_t, pos)},
+            {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex_t, color)}
+        };
+        binding.attribute_description = attrib_desc;
 
-    create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices, sizeof(vertices));
+        triangle_t triangle;
+        triangle.window = get_comp(win_ent, GET_ID(window_t));
+        create_pipeline(&window, &triangle.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
 
-    add_triangle_t(tri_ent, &triangle);
+        if (i % 2 != 0) {
+            create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices, sizeof(vertices));
+        } else {
+            create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices2, sizeof(vertices2));
+        }
+
+        add_triangle_t(tri_ent, &triangle);
+    }
 }
 
-REGISTER_SYSTEM(setup_triangle, SETUP);
+REGISTER_SYSTEM(setup_multi_win, SETUP);
 
 void render_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_data_t* list = FILTER_ENTITIES(triangle_t);
 
-    entity_t* ent = list;
+    entity_data_t* ent = list;
     while (*ent != NULL) {
         triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
         /* bind pipeline */
@@ -85,9 +97,9 @@ REGISTER_SYSTEM(render_triangle, RENDER);
 extern int should_exit;
 
 void update() {
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_data_t* list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
+    entity_data_t* ent = list;
     while (*ent != NULL) {
         window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
         if (glfwWindowShouldClose(window->window)) {
@@ -102,9 +114,9 @@ void update() {
 REGISTER_SYSTEM(update, UPDATE);
 
 void cleanup_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_data_t* list = FILTER_ENTITIES(triangle_t);
 
-    entity_t* ent = list;
+    entity_data_t* ent = list;
     while (*ent != NULL) {
         triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
 

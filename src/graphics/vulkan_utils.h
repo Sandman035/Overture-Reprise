@@ -39,7 +39,7 @@ typedef struct {
 typedef struct {
     VkBuffer buffer;
     VkDeviceMemory memory;
-} vertex_buffer_t;
+} buffer_t;
 
 typedef struct {
     VkPipeline pipeline;

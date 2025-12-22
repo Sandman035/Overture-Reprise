@@ -24,9 +24,9 @@ All entities will be able to be initialized from a map file. Some sort of genera
 
 Most of the design of the engine will relly on trying to make it as easy to use as possible, and many many hacks or overcomplicated designs will be implemented for this reason. This will mainly manifest in macro abuse, compiler abuse and many other fun ways to torture C purists.
 
-### Modular Renderer
+### Clustered Forward Renderer
 
-With a deffered renderer base, the renderer can also be extended with nodes. Need post processing? insert node. Similar to what bevy has. Although maybe it might not be modular on the user end but only on the engine end... idk. There's only so much macro and compiler abuse overture can handle before it implodes.
+Using a clustered renderer a tone of lights can be rendered efficiently. The forward part of the renderer allows for easy custom shaders. Maybe a z pre-pass might be implemented to reduce overdraw but that is to be seen.
 
 ## Dependencies
 

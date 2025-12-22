@@ -5,12 +5,14 @@
 #include "graphics/vulkan_utils.h"
 #include "platform/window.h"
 #include <GLFW/glfw3.h>
+#include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
 typedef struct {
     window_t* window;
     pipeline_t pipeline;
     buffer_t vertex_buffer;
+    buffer_t index_buffer;
 } triangle_t;
 
 REGISTER_COMPONENT(triangle_t);
@@ -21,9 +23,14 @@ typedef struct {
 } vertex_t;
 
 const vertex_t vertices[] = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const uint16_t indices[] = {
+    0, 1, 2, 2, 3, 0
 };
 
 void setup_triangle() {
@@ -50,6 +57,7 @@ void setup_triangle() {
     create_pipeline(&window, &triangle.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
 
     create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices, sizeof(vertices));
+    create_index_buffer(&window, &triangle.index_buffer, (void *)indices, sizeof(indices));
 
     add_triangle_t(tri_ent, &triangle);
 }
@@ -65,13 +73,15 @@ void render_triangle() {
         /* bind pipeline */
         vkCmdBindPipeline(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, triangle->pipeline.pipeline);
         TRACE("Bound pipeline.");
-        /* bind vertex buffer */
+        /* bind vertex and index buffer */
         VkBuffer vertexBuffers[] = {triangle->vertex_buffer.buffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
-        TRACE("Bound vertex buffers.");
+
+        vkCmdBindIndexBuffer(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], triangle->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+        TRACE("Bound vertex and index buffers.");
         /* draw verticies */
-        vkCmdDraw(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 3, 1, 0, 0);
+        vkCmdDrawIndexed(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 6, 1, 0, 0, 0);
         TRACE("Drawn triangles.");
 
         ent++;
@@ -109,6 +119,7 @@ void cleanup_triangle() {
         triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
 
         destroy_vertex_buffer(triangle->window, &triangle->vertex_buffer);
+        destroy_index_buffer(triangle->window, &triangle->index_buffer);
         destroy_pipeline(triangle->window, &triangle->pipeline);
 
         ent++;
