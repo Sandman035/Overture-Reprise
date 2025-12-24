@@ -44,17 +44,17 @@ window_t create_window() {
 }
 
 void cleanup_windows() {
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
 
         cleanup_vulkan_window(window);
 
         glfwDestroyWindow(window->window);
         
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -66,15 +66,15 @@ REGISTER_SYSTEM(cleanup_windows, CLEANUP);
 void start_window_render() {
     glfwPollEvents();
 
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
 
         begin_vulkan_window_render(window);
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -83,17 +83,17 @@ void start_window_render() {
 REGISTER_SYSTEM(start_window_render, PRE_RENDER);
 
 void display_to_windows() {
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
 
         end_vulkan_window_render(window);
 
         vulkan_display_to_window(window);
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);

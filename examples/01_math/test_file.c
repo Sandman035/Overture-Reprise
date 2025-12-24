@@ -14,16 +14,16 @@ typedef struct {
 } player_name_t;
 
 void calculate_scores() {
-    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
+    entity_t** list = FILTER_ENTITIES(score_t, player_name_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        score_t* score = get_comp_from_ent(*ent, GET_ID(score_t));
-        player_name_t* name = get_comp_from_ent(*ent, GET_ID(player_name_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        score_t* score = get_comp(*ent_ptr, GET_ID(score_t));
+        player_name_t* name = get_comp(*ent_ptr, GET_ID(player_name_t));
 
         printf("%s score: %d\n", name->name, score->wins - score->losses);
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);

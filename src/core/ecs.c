@@ -9,13 +9,12 @@
 #include <string.h>
 
 typedef struct entity_node_t {
-    uint64_t id;
     entity_t entity;
-    signature_t signature;
     struct entity_node_t* next;
 } entity_node_t;
 
 static entity_node_t* entity_head = NULL;
+static entity_node_t* entity_tail = NULL;
 
 static uint64_t ent_num = 0;
 static uint64_t comp_num = 0;
@@ -81,15 +80,16 @@ signature_t create_sig(uint32_t n, ...) {
     return signature;
 }
 
+// DONE
 uint64_t register_new_comp() {
     comp_num++;
 
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
-        temp->entity = realloc(temp->entity, comp_num * sizeof(component_t));
+        temp->entity.components = realloc(temp->entity.components, comp_num * sizeof(component_t));
 
         // maybe we should only realloc when signature overflows
-        temp->signature = realloc(temp->signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
+        temp->entity.signature = realloc(temp->entity.signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
         temp = temp->next;
     }
 
@@ -98,140 +98,100 @@ uint64_t register_new_comp() {
     return comp_num;
 }
 
-void add_comp(uint64_t ent_id, uint64_t comp_id, void *data, size_t size) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->id == ent_id) {
-            //malloc and memcpy might not be necessary although its a good safeguard maybe idk
-            void* data_ptr = malloc(size);
-            memcpy(data_ptr, data, size);
-            temp->entity[comp_id - 1] = data_ptr;
-
-            signature_t comp_sig = id_to_sig(comp_id);
-            signature_t ent_sig = temp->signature;
-
-            add_sig(ent_sig, comp_sig);
-
-            free(comp_sig);
-
-            TRACE("Added component %ld to entity %ld.", comp_id, ent_id);
-
-            return;
-        }
-        temp = temp->next;
+// DONE
+void add_comp(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
+    if (ent == NULL) {
+        WARN("Entity does not exist, failed to add component %ld.", comp_id);
+        return;
     }
+    //malloc and memcpy might not be necessary although its a good safeguard maybe idk
+    void* data_ptr = malloc(size);
+    memcpy(data_ptr, data, size);
+    ent->components[comp_id - 1] = data_ptr;
 
-    ERROR("Entity %ld does not exist, failed to add component %ld.", ent_id, comp_id);
-    return;
+    signature_t comp_sig = id_to_sig(comp_id);
+    signature_t ent_sig = ent->signature;
+
+    add_sig(ent_sig, comp_sig);
+
+    free(comp_sig);
+
+    TRACE("Added component %ld to entity %ld.", comp_id, ent->id);
 }
 
-component_t get_comp(uint64_t ent_id, uint64_t comp_id) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->id == ent_id) {
-            signature_t comp_sig = id_to_sig(comp_id);
-            signature_t ent_sig = temp->signature;
-
-            int result = contains_sig(ent_sig, comp_sig);
-
-            free(comp_sig);
-
-            if (result) {
-                TRACE("Retrieved component %ld from entity %ld.", comp_id, ent_id);
-                return temp->entity[comp_id - 1];
-            }
-            ERROR("Entity %ld does not contain component %ld.", ent_id, comp_id);
-        }
-        temp = temp->next;
+// DONE
+component_t get_comp(entity_t* ent, uint64_t comp_id) {
+    if (ent == NULL) {
+        WARN("Entity does not exist.");
+        return NULL;
     }
 
-    ERROR("Entity %ld does not exist.", ent_id, comp_id);
+    signature_t comp_sig = id_to_sig(comp_id);
+    signature_t ent_sig = ent->signature;
+
+    int result = contains_sig(ent_sig, comp_sig);
+
+    free(comp_sig);
+
+    if (result) {
+        TRACE("Retrieved component %ld from entity %ld.", comp_id, ent->id);
+        return ent->components[comp_id - 1];
+    }
+    WARN("Entity %ld does not contain component %ld.", ent->id, comp_id);
     return NULL;
 }
 
-component_t get_comp_from_ent(entity_t ent, uint64_t comp_id) {
-    return ent[comp_id - 1];
-}
-
-void remove_comp(uint64_t ent_id, uint64_t comp_id) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->id == ent_id) {
-            free(temp->entity[comp_id - 1]);
-            temp->entity[comp_id - 1] = NULL;
-
-            signature_t comp_sig = id_to_sig(comp_id);
-            signature_t ent_sig = temp->signature;
-
-            remove_sig(ent_sig, comp_sig);
-
-            free(comp_sig);
-
-            TRACE("Removed component %ld from entity %ld", comp_id, ent_id);
-
-            return;
-        }
-        temp = temp->next;
+// DONE
+void remove_comp(entity_t* ent, uint64_t comp_id) {
+    if (ent == NULL) {
+        WARN("Entity does not exist, cannot remove component %ld.", comp_id);
+        return;
     }
 
-    WARN("Entity %ld does not exist, cannot remove component %ld.", ent_id, comp_id);
-    return;
+    free(ent->components[comp_id - 1]);
+    ent->components[comp_id - 1] = NULL;
+
+    signature_t comp_sig = id_to_sig(comp_id);
+    signature_t ent_sig = ent->signature;
+
+    remove_sig(ent_sig, comp_sig);
+
+    free(comp_sig);
+
+    TRACE("Removed component %ld from entity %ld", comp_id, ent->id);
 }
 
-int has_comp(uint64_t ent_id, uint64_t comp_id) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->id == ent_id) {
-            signature_t comp_sig = id_to_sig(comp_id);
-            signature_t ent_sig = temp->signature;
-
-            int result = contains_sig(ent_sig, comp_sig);
-
-            free(comp_sig);
-
-            return result;
-        }
-        temp = temp->next;
-    }
-
-    ERROR("Entity %ld does not exist.", ent_id);
-    return 0;
-}
-
-/// returns new entity index
-uint64_t add_ent() {
+// DONE? maybe entity needs to be malloc idk
+entity_t* create_entity() {
     entity_node_t* node = malloc(sizeof(entity_node_t));
-    node->id = ent_num;
-    node->entity = calloc(comp_num, sizeof(component_t));
-    node->signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
+    node->entity.id = ent_num;
+    node->entity.components = calloc(comp_num, sizeof(component_t));
+    node->entity.signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
     node->next = NULL;
 
     ent_num++;
 
-    if (entity_head == NULL) {
-        TRACE("Created first entity.");
-        entity_head = node;
-        return ent_num - 1;
-    }
-
-    entity_node_t* temp = entity_head;
-    while (temp->next != NULL) {
-        temp = temp->next;
-    }
-
-    temp->next = node;
-
     TRACE("Created entity %ld.", ent_num - 1);
 
-    return ent_num - 1;
+    if (entity_head == NULL) {
+        entity_head = node;
+        entity_tail = node;
+        return &node->entity;
+    }
+
+    entity_tail->next = node;
+    entity_tail = node;
+
+    return &node->entity;
 }
 
-entity_t get_ent(uint64_t id) {
+// DONE
+entity_t* get_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
-        if (temp->id == id) {
+        if (temp->entity.id == id) {
             TRACE("Retrieved entity %ld.", id);
-            return temp->entity;
+            return &temp->entity;
         }
         temp = temp->next;
     }
@@ -240,19 +200,20 @@ entity_t get_ent(uint64_t id) {
     return NULL;
 }
 
+// DONE unless entity_t is malloc
 void remove_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
-        if (temp->next->id == id) {
+        if (temp->next->entity.id == id) {
             entity_node_t* ent = temp->next;
 
             uint64_t n = comp_num;
             while (n--) {
-                free(ent->entity[n]);
-                ent->entity[n] = NULL;
+                free(ent->entity.components[n]);
+                ent->entity.components[n] = NULL;
             }
-            free(ent->signature);
-            ent->signature = NULL;
+            free(ent->entity.signature);
+            ent->entity.signature = NULL;
 
             temp->next = ent->next;
 
@@ -269,23 +230,23 @@ void remove_ent(uint64_t id) {
     return;
 }
 
-entity_t* filter_entities(signature_t filter) {
+entity_t** filter_entities(signature_t filter) {
     uint64_t len = 0;
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
-        if (contains_sig(temp->signature, filter)) {
+        if (contains_sig(temp->entity.signature, filter)) {
             len += 1;
         }
         temp = temp->next;
     }
 
-    entity_t* list = malloc((len + 1) * sizeof(entity_t));
+    entity_t** list = malloc((len + 1) * sizeof(entity_t));
     
     uint64_t idx = 0;
     temp = entity_head;
     while (temp != NULL) {
-        if (contains_sig(temp->signature, filter)) {
-            list[idx++] = temp->entity;
+        if (contains_sig(temp->entity.signature, filter)) {
+            list[idx++] = &temp->entity;
         }
         temp = temp->next;
     }

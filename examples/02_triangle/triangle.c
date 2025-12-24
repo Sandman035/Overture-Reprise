@@ -27,14 +27,14 @@ const vertex_t vertices[] = {
 };
 
 void setup_triangle() {
-    unsigned long win_ent = add_ent();
+    entity_t* win_ent = create_entity();
 
     window_t window = create_window();
 
-    extern void add_window_t(unsigned long, void*);
+    extern void add_window_t(entity_t*, void*);
     add_window_t(win_ent, &window);
 
-    unsigned long tri_ent = add_ent();
+    entity_t* tri_ent = create_entity();
 
     vertex_binding_t binding;
     binding.binding_description = (VkVertexInputBindingDescription) {0, sizeof(vertex_t), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -57,11 +57,11 @@ void setup_triangle() {
 REGISTER_SYSTEM(setup_triangle, SETUP);
 
 void render_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_t** list = FILTER_ENTITIES(triangle_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
         /* bind pipeline */
         vkCmdBindPipeline(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, triangle->pipeline.pipeline);
         TRACE("Bound pipeline.");
@@ -74,7 +74,7 @@ void render_triangle() {
         vkCmdDraw(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 3, 1, 0, 0);
         TRACE("Drawn triangles.");
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -85,15 +85,15 @@ REGISTER_SYSTEM(render_triangle, RENDER);
 extern int should_exit;
 
 void update() {
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
         if (glfwWindowShouldClose(window->window)) {
             should_exit = 1;
         }
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -102,16 +102,16 @@ void update() {
 REGISTER_SYSTEM(update, UPDATE);
 
 void cleanup_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_t** list = FILTER_ENTITIES(triangle_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
 
         destroy_vertex_buffer(triangle->window, &triangle->vertex_buffer);
         destroy_pipeline(triangle->window, &triangle->pipeline);
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);

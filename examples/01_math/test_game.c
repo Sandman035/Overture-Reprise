@@ -29,10 +29,10 @@ void setup_game() {
         player_name_t player_name;
         scanf("%s", player_name.name);
 
-        unsigned long player_id = add_ent();
+        entity_t* player = create_entity();
 
         void* name_ptr = &player_name;
-        add_player_name_t(player_id, name_ptr);
+        add_player_name_t(player, name_ptr);
 
         score_t score;
         score.wins = 0;
@@ -46,7 +46,7 @@ void setup_game() {
         deserialize(&score_t_fmt, buff, &score2);
 
         void* score_ptr = &score2;
-        add_score_t(player_id, score_ptr);
+        add_score_t(player, score_ptr);
 
         printf("Would you like to add a new player? [y/n]\n");
 
@@ -60,8 +60,6 @@ void setup_game() {
         break;
     }
 
-    unsigned long new_ent = add_ent();
-
     srand(time(NULL));
 }
 
@@ -70,12 +68,12 @@ REGISTER_SYSTEM(setup_game, SETUP);
 extern int should_exit;
 
 void update_game() {
-    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
+    entity_t** list = FILTER_ENTITIES(score_t, player_name_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        score_t* score = get_comp_from_ent(*ent, GET_ID(score_t));
-        player_name_t* name = get_comp_from_ent(*ent, GET_ID(player_name_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        score_t* score = get_comp(*ent_ptr, GET_ID(score_t));
+        player_name_t* name = get_comp(*ent_ptr, GET_ID(player_name_t));
 
         int n1 = rand() % 100;
         int n2 = rand() % 100;
@@ -99,7 +97,7 @@ void update_game() {
             should_exit = 1;
         }
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -108,15 +106,15 @@ void update_game() {
 REGISTER_SYSTEM(update_game, UPDATE);
 
 void print_scores() {
-    entity_t* list = FILTER_ENTITIES(score_t);
+    entity_t** list = FILTER_ENTITIES(score_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        score_t* score = get_comp_from_ent(*ent, score_t_id);
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        score_t* score = get_comp(*ent_ptr, score_t_id);
         if (score->display) {
             printf("wins: %d, losses: %d\n", score->wins, score->losses);
         }
-        ent++;
+        ent_ptr++;
     }
 
     free(list);

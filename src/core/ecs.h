@@ -17,28 +17,31 @@
 
 typedef uint8_t* signature_t;
 typedef void* component_t;
-typedef component_t* entity_t; // ptr to a void*
+
+typedef struct {
+    uint64_t id;
+    component_t* components;
+    signature_t signature;
+} entity_t;
 
 // component registration funcs and other tools
 uint64_t register_new_comp();
-void add_comp(uint64_t ent_id, uint64_t comp_id, void* data, size_t size);
+void add_comp(entity_t* ent, uint64_t comp_id, void* data, size_t size);
 
 // entity funcs
-uint64_t add_ent();
+entity_t* create_entity();
 void remove_ent(uint64_t id);
-entity_t get_ent(uint64_t id);
+entity_t* get_ent(uint64_t id);
 
 // component funcs
-int has_comp(uint64_t ent_id, uint64_t comp_id);
-component_t get_comp(uint64_t ent_id, uint64_t comp_id);
-component_t get_comp_from_ent(entity_t ent, uint64_t comp_id);
-void remove_comp(uint64_t ent_id, uint64_t comp_id);
+component_t get_comp(entity_t* ent, uint64_t comp_id);
+void remove_comp(entity_t* ent, uint64_t comp_id);
 
-entity_t* filter_entities(signature_t filter);
+entity_t** filter_entities(signature_t filter);
 
 #define FILTER_ENTITIES(...) ({ \
     signature_t filter = CREATE_SIG(__VA_ARGS__); \
-    entity_t* list = filter_entities(filter); \
+    entity_t** list = filter_entities(filter); \
     free(filter); \
     list; \
 })
@@ -59,11 +62,11 @@ signature_t create_sig(uint32_t n, ...);
 // using ddlexport on win add_struct_name will be called using dlsym well on linux
 #define REGISTER_COMPONENT(struct_name) \
     uint64_t struct_name ## _id = 0; \
-    void add_ ## struct_name(uint64_t id, void* data) { \
+    void add_ ## struct_name(entity_t* ent, void* data) { \
         if (struct_name ## _id == 0) { \
             struct_name ## _id = register_new_comp(); \
         } \
-        add_comp(id, struct_name ## _id, data, sizeof(struct_name)); \
+        add_comp(ent, struct_name ## _id, data, sizeof(struct_name)); \
     } \
 
 #endif

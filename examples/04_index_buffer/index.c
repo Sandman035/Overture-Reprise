@@ -13,9 +13,9 @@ typedef struct {
     pipeline_t pipeline;
     buffer_t vertex_buffer;
     buffer_t index_buffer;
-} triangle_t;
+} rect_t;
 
-REGISTER_COMPONENT(triangle_t);
+REGISTER_COMPONENT(rect_t);
 
 typedef struct {
     float pos[2];
@@ -34,14 +34,14 @@ const uint16_t indices[] = {
 };
 
 void setup_triangle() {
-    unsigned long win_ent = add_ent();
+    entity_t* win_ent = create_entity();
 
     window_t window = create_window();
 
-    extern void add_window_t(unsigned long, void*);
+    extern void add_window_t(entity_t*, void*);
     add_window_t(win_ent, &window);
 
-    unsigned long tri_ent = add_ent();
+    entity_t* tri_ent = create_entity();
 
     vertex_binding_t binding;
     binding.binding_description = (VkVertexInputBindingDescription) {0, sizeof(vertex_t), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -52,39 +52,39 @@ void setup_triangle() {
     };
     binding.attribute_description = attrib_desc;
 
-    triangle_t triangle;
-    triangle.window = get_comp(win_ent, GET_ID(window_t));
-    create_pipeline(&window, &triangle.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
+    rect_t rect;
+    rect.window = get_comp(win_ent, GET_ID(window_t));
+    create_pipeline(&window, &rect.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
 
-    create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices, sizeof(vertices));
-    create_index_buffer(&window, &triangle.index_buffer, (void *)indices, sizeof(indices));
+    create_vertex_buffer(&window, &rect.vertex_buffer, (void *)vertices, sizeof(vertices));
+    create_index_buffer(&window, &rect.index_buffer, (void *)indices, sizeof(indices));
 
-    add_triangle_t(tri_ent, &triangle);
+    add_rect_t(tri_ent, &rect);
 }
 
 REGISTER_SYSTEM(setup_triangle, SETUP);
 
 void render_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_t** list = FILTER_ENTITIES(rect_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
         /* bind pipeline */
-        vkCmdBindPipeline(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, triangle->pipeline.pipeline);
+        vkCmdBindPipeline(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, rect->pipeline.pipeline);
         TRACE("Bound pipeline.");
         /* bind vertex and index buffer */
-        VkBuffer vertexBuffers[] = {triangle->vertex_buffer.buffer};
+        VkBuffer vertexBuffers[] = {rect->vertex_buffer.buffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], triangle->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], rect->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
         TRACE("Bound vertex and index buffers.");
         /* draw verticies */
-        vkCmdDrawIndexed(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 6, 1, 0, 0, 0);
+        vkCmdDrawIndexed(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], 6, 1, 0, 0, 0);
         TRACE("Drawn triangles.");
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -95,15 +95,15 @@ REGISTER_SYSTEM(render_triangle, RENDER);
 extern int should_exit;
 
 void update() {
-    entity_t* list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        window_t* window = get_comp_from_ent(*ent, GET_ID(window_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
         if (glfwWindowShouldClose(window->window)) {
             should_exit = 1;
         }
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
@@ -112,17 +112,17 @@ void update() {
 REGISTER_SYSTEM(update, UPDATE);
 
 void cleanup_triangle() {
-    entity_t* list = FILTER_ENTITIES(triangle_t);
+    entity_t** list = FILTER_ENTITIES(rect_t);
 
-    entity_t* ent = list;
-    while (*ent != NULL) {
-        triangle_t* triangle = get_comp_from_ent(*ent, GET_ID(triangle_t));
+    entity_t** ent_ptr = list;
+    while (*ent_ptr != NULL) {
+        rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
 
-        destroy_vertex_buffer(triangle->window, &triangle->vertex_buffer);
-        destroy_index_buffer(triangle->window, &triangle->index_buffer);
-        destroy_pipeline(triangle->window, &triangle->pipeline);
+        destroy_vertex_buffer(rect->window, &rect->vertex_buffer);
+        destroy_index_buffer(rect->window, &rect->index_buffer);
+        destroy_pipeline(rect->window, &rect->pipeline);
 
-        ent++;
+        ent_ptr++;
     }
 
     free(list);
