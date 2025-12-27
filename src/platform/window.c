@@ -61,7 +61,7 @@ void cleanup_windows() {
     TRACE("Destroyed windows.");
 }
 
-REGISTER_SYSTEM(cleanup_windows, CLEANUP);
+REGISTER_SYSTEM(cleanup_windows, POST_CLEANUP);
 
 void start_window_render() {
     glfwPollEvents();

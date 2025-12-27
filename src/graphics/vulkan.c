@@ -40,10 +40,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_callback(VkDebugUtilsMessageS
 void setup_vulkan() {
     VkApplicationInfo app_info;
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = PROJECT_NAME;
-    app_info.applicationVersion = VK_MAKE_VERSION(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-    app_info.pEngineName = ENGINE_NAME;
-    app_info.engineVersion = VK_MAKE_VERSION(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_PATCH);
+    app_info.pApplicationName = "";
+    app_info.applicationVersion = VK_MAKE_VERSION(0, 0, 0);
+    app_info.pEngineName = "Overture";
+    app_info.engineVersion = VK_MAKE_VERSION(0, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_0;
     app_info.pNext = NULL;
 

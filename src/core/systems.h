@@ -12,6 +12,7 @@ typedef enum {
     RENDER,
     POST_RENDER,
     CLEANUP,
+    POST_CLEANUP, // find a better name or smt
     NUM_OF_SCHEDULES
 } schedule_t;
 
@@ -22,6 +23,7 @@ typedef enum {
         register_system(system, schedule); \
     }
 
+// TODO: register before after other system or sequential etc
 void register_system(system_ptr_t system, schedule_t schedule);
 void run_systems_sequential(schedule_t schedule);
 void run_systems_parrallel(schedule_t schedule);

@@ -22,7 +22,8 @@ const char* schedules[] = {
     "PRE_RENDER",
     "RENDER",
     "POST_RENDER",
-    "CLEANUP"
+    "CLEANUP",
+    "POST_CLEANUP"
 };
 
 // TODO: error handling for malloc
