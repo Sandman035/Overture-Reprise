@@ -857,6 +857,10 @@ void destroy_pipeline(window_t* window, pipeline_t* pipeline) {
     vkDestroyPipelineLayout(window->vulkan_info.device, pipeline->layout, NULL);
 }
 
+void bind_graphics_pipeline(window_t* window, pipeline_t pipeline) {
+    vkCmdBindPipeline(window->vulkan_info.command_buffers[window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+}
+
 void create_vertex_buffer(window_t* window, buffer_t* vertex_buffer, void* verticies, size_t size) {
     VkDeviceSize buffer_size = size;
 
@@ -1004,6 +1008,13 @@ void destroy_vertex_buffer(window_t* window, buffer_t* vertex_buffer) {
     vkFreeMemory(window->vulkan_info.device, vertex_buffer->memory, NULL);
 }
 
+void bind_vertex_buffer(window_t* window, buffer_t vertex_buffer, const uint64_t offset) {
+    // TODO: bind multiple vertex buffers at the same time or smt idk
+    VkBuffer vertexBuffers[] = {vertex_buffer.buffer};
+    VkDeviceSize offsets[] = {offset};
+    vkCmdBindVertexBuffers(window->vulkan_info.command_buffers[window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
+}
+
 void create_index_buffer(window_t* window, buffer_t* index_buffer, void* indicies, size_t size) {
     VkDeviceSize buffer_size = size;
 
@@ -1149,4 +1160,8 @@ void destroy_index_buffer(window_t* window, buffer_t* index_buffer) {
     vkDeviceWaitIdle(window->vulkan_info.device);
     vkDestroyBuffer(window->vulkan_info.device, index_buffer->buffer, NULL);
     vkFreeMemory(window->vulkan_info.device, index_buffer->memory, NULL);
+}
+
+void bind_index_buffer(window_t* window, buffer_t index_buffer, uint64_t offset, VkIndexType index_type) {
+    vkCmdBindIndexBuffer(window->vulkan_info.command_buffers[window->vulkan_info.current_frame], index_buffer.buffer, offset, index_type);
 }

@@ -24,13 +24,18 @@ All entities will be able to be initialized from a map file. Some sort of genera
 
 Most of the design of the engine will relly on trying to make it as easy to use as possible, and many many hacks or overcomplicated designs will be implemented for this reason. This will mainly manifest in macro abuse, compiler abuse and many other fun ways to torture C purists.
 
-### Specialized Clustered Deffered PBR Renderer
+### Some sort of Clustered Renderer
 
-Using a clustered renderer a tonne of lights can be rendered efficiently. Using a custom specialized deffered renderer can provide fast, quality visuals with the downside of loosing out on versitility. Although some sort of custom shader effects, materials, or object rendering support will be implemented. The renderer will follow the following outline: (as long as i don't change my mind again)
+Using a clustered renderer a lot of lights can be renderer efficiently. Now i have two options for the rest of the engine architecture:
 
-Cluster Compute -> G Buffer Pass (with possible custom shader tag and support) -> Deffered shading -> Indirect lighting (AO, GI, reflections) -> Post processing -> UI
+1. Forward Rendering
+2. Deffered rendering
 
-More stages might be added or some might change but this is a general idea of the rendering process. Some other things that will get implemented is some sort of transparency support (most likely OIT), instanced rendering, etc.
+Forward Rendering would allow easy custom shader support while giving up a bit of performance that a deffered renderer can provide. Also MSAA...
+
+Deffered is faster, less versatile, cause you're pretty much stuck with one renderering pipeline though it is possible to implement another pass for custom shaders. Also no MSAA...
+
+Most likely I'll do a clustured forward renderer with IOT and a z prepass for even less lighting calculations. Most likely during the main forward pass a normal buffer will be created for SSAO and other post effects.
 
 ## Dependencies
 

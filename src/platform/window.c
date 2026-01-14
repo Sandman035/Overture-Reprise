@@ -28,7 +28,7 @@ void cleanup_windowing() {
 
 REGISTER_COMPONENT(window_t);
 
-// maybe instead of creating a window component maybe create an entity with window comp?
+// TODO: return pointer to window (malloc)
 window_t create_window() {
     window_t window;
 
@@ -41,6 +41,10 @@ window_t create_window() {
     setup_vulkan_window(&window);
 
     return window;
+}
+
+uint32_t should_window_close(window_t* window) {
+    return glfwWindowShouldClose(window->window);
 }
 
 void cleanup_windows() {

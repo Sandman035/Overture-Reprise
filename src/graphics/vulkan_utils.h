@@ -44,6 +44,7 @@ typedef struct {
 typedef struct {
     VkPipeline pipeline;
     VkPipelineLayout layout;
+    // descriptor set layouts and count
 } pipeline_t;
 
 VkResult create_debug_utils_messenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);

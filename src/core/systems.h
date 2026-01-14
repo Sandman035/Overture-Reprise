@@ -12,19 +12,27 @@ typedef enum {
     RENDER,
     POST_RENDER,
     CLEANUP,
-    POST_CLEANUP, // find a better name or smt
+    POST_CLEANUP, // TODO: fix ordered registering and get rid of this
     NUM_OF_SCHEDULES
 } schedule_t;
 
-// maybe register system with a filter and then filtering can be done by the engine instead of user maybe idk
 #define REGISTER_SYSTEM(system, schedule) \
     __attribute__((constructor)) \
     void add_ ## system() { \
         register_system(system, schedule); \
     }
 
-// TODO: register before after other system or sequential etc
+// doesn't work don't use
+#define REGISTER_SYSTEM_BEFORE(system, target, schedule) \
+    __attribute__((constructor)) \
+    void add_ ## system() { \
+        register_system_before(system, target, schedule); \
+    }
+
 void register_system(system_ptr_t system, schedule_t schedule);
+// doesn't work don't use
+void register_system_before(system_ptr_t system, system_ptr_t target, schedule_t schedule);
+
 void run_systems_sequential(schedule_t schedule);
 void run_systems_parrallel(schedule_t schedule);
 

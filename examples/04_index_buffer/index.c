@@ -70,15 +70,10 @@ void render_triangle() {
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
         rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
-        /* bind pipeline */
-        vkCmdBindPipeline(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, rect->pipeline.pipeline);
+        bind_graphics_pipeline(rect->window, rect->pipeline);
         TRACE("Bound pipeline.");
-        /* bind vertex and index buffer */
-        VkBuffer vertexBuffers[] = {rect->vertex_buffer.buffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], rect->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+        bind_vertex_buffer(rect->window, rect->vertex_buffer, 0);
+        bind_index_buffer(rect->window, rect->index_buffer, 0, VK_INDEX_TYPE_UINT16);
         TRACE("Bound vertex and index buffers.");
         /* draw verticies */
         vkCmdDrawIndexed(rect->window->vulkan_info.command_buffers[rect->window->vulkan_info.current_frame], 6, 1, 0, 0, 0);
@@ -100,7 +95,7 @@ void update() {
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
         window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
-        if (glfwWindowShouldClose(window->window)) {
+        if (should_window_close(window)) {
             should_exit = 1;
         }
         ent_ptr++;

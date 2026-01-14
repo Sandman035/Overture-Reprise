@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
+#include <libgen.h>
 
 const char *levels[] = {
   "[TRACE]:", 
@@ -31,7 +32,7 @@ void print_log(log_level_t level, const char *file, int line, const char *fmt, .
 
     strftime(buffer, 26, "%F %T", tm_info);
 
-    fprintf(stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ", buffer, colors[level], levels[level], file, line);
+    fprintf(stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ", buffer, colors[level], levels[level], basename((char *)file), line);
 
     va_list args;
     va_start(args, fmt);

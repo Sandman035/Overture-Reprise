@@ -1,9 +1,8 @@
 #include "core/ecs.h"
 #include "core/log.h"
 #include "core/systems.h"
-#include "graphics/vulkan.h"
-#include "graphics/vulkan_utils.h"
 #include "platform/window.h"
+#include "graphics/vulkan.h"
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
@@ -62,13 +61,10 @@ void render_triangle() {
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
         triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
-        /* bind pipeline */
-        vkCmdBindPipeline(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, triangle->pipeline.pipeline);
+
+        bind_graphics_pipeline(triangle->window, triangle->pipeline);
         TRACE("Bound pipeline.");
-        /* bind vertex buffer */
-        VkBuffer vertexBuffers[] = {triangle->vertex_buffer.buffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 0, 1, vertexBuffers, offsets);
+        bind_vertex_buffer(triangle->window, triangle->vertex_buffer, 0);
         TRACE("Bound vertex buffers.");
         /* draw verticies */
         vkCmdDraw(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 3, 1, 0, 0);
@@ -90,7 +86,7 @@ void update() {
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
         window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
-        if (glfwWindowShouldClose(window->window)) {
+        if (should_window_close(window)) {
             should_exit = 1;
         }
         ent_ptr++;
