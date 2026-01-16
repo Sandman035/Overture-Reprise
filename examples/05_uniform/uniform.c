@@ -4,15 +4,15 @@
 #include "graphics/opengl.h"
 #include "platform/window.h"
 #include <GLFW/glfw3.h>
-#include <stdint.h>
+#include <stddef.h>
 
 typedef struct {
     window_t* window;
     program_t program;
     vertex_buffer_t vertex_buffer;
-} rect_t;
+} triangle_t;
 
-REGISTER_COMPONENT(rect_t);
+REGISTER_COMPONENT(triangle_t);
 
 typedef struct {
     float pos[3];
@@ -20,14 +20,9 @@ typedef struct {
 } vertex_t;
 
 const vertex_t vertices[] = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.0f,  0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
-};
-
-const uint32_t indices[] = {
-    0, 1, 2, 2, 3, 0
+    {{-0.5f,-0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
 };
 
 const char *vertex_shader_source ="#version 430 core\n"
@@ -43,9 +38,10 @@ const char *vertex_shader_source ="#version 430 core\n"
 const char *fragment_shader_source = "#version 430 core\n"
     "out vec4 FragColor;\n"
     "in vec3 ourColor;\n"
+    "uniform vec4 newColor;\n"
     "void main()\n"
     "{\n"
-    "   FragColor = vec4(ourColor, 1.0f);\n"
+    "   FragColor = newColor * vec4(ourColor, 1.0);;\n"
     "}\n\0";
 
 void setup_triangle() {
@@ -56,40 +52,41 @@ void setup_triangle() {
     extern void add_window_t(entity_t*, void*);
     add_window_t(win_ent, window);
 
-    entity_t* rect_ent = create_entity();
+    entity_t* tri_ent = create_entity();
 
-    rect_t rect;
-    rect.window = get_comp(win_ent, GET_ID(window_t));
+    triangle_t triangle;
+    triangle.window = get_comp(win_ent, GET_ID(window_t));
 
-    rect.program = create_program();
-    add_shader(rect.program, vertex_shader_source, VERTEX_SHADER);
-    add_shader(rect.program, fragment_shader_source, FRAGMENT_SHADER);
+    triangle.program = create_program();
+    add_shader(triangle.program, vertex_shader_source, VERTEX_SHADER);
+    add_shader(triangle.program, fragment_shader_source, FRAGMENT_SHADER);
 
-    rect.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
-    add_index_buffer(&rect.vertex_buffer, sizeof(indices), (void*)indices);
-    add_attrib(&rect.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, pos));
-    add_attrib(&rect.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, color));
+    triangle.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
+    add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, pos));
+    add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, color));
 
-    add_rect_t(rect_ent, &rect);
+    add_triangle_t(tri_ent, &triangle);
 }
 
 REGISTER_SYSTEM(setup_triangle, SETUP);
 
 void render_triangle() {
-    entity_t** list = FILTER_ENTITIES(rect_t);
+    entity_t** list = FILTER_ENTITIES(triangle_t);
 
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
-        rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
+        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
 
-        glfwMakeContextCurrent(rect->window->window);
+        glfwMakeContextCurrent(triangle->window->window);
 
-        glUseProgram(rect->program);
+        glUseProgram(triangle->program);
 
-        glBindVertexArray(rect->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        SET_UNIFORM(4f, triangle->program, "newColor", 0.2f, 0.2f, 0.2f, 1.0f);
 
-        TRACE("Draw rectangle.");
+        glBindVertexArray(triangle->vertex_buffer.VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        TRACE("Draw triangle.");
 
         ent_ptr++;
     }
@@ -119,14 +116,14 @@ void update() {
 REGISTER_SYSTEM(update, UPDATE);
 
 void cleanup_triangle() {
-    entity_t** list = FILTER_ENTITIES(rect_t);
+    entity_t** list = FILTER_ENTITIES(triangle_t);
 
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
-        rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
+        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
 
-        destroy_vertex_buffer(&rect->vertex_buffer);
-        destroy_program(rect->program);
+        destroy_vertex_buffer(&triangle->vertex_buffer);
+        destroy_program(triangle->program);
 
         ent_ptr++;
     }

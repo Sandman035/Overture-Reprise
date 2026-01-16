@@ -25,6 +25,11 @@ program_t create_program();
 void destroy_program(program_t program);
 void add_shader(program_t program, const char* shader_source, shader_type_t shader_type);
 
+// NOTE: idk if ill keep this tho it does save a bit of work tho its hard to document
+// TODO: maybe add a way to check if uniform exists and only set it if it does
+#define SET_UNIFORM(type, program, name, ...) \
+    glUniform ## type(glGetUniformLocation(program, name), __VA_ARGS__);
+
 typedef struct {
     uint32_t VAO;
     uint32_t VBO;

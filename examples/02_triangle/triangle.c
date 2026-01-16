@@ -25,7 +25,7 @@ const vertex_t vertices[] = {
     {{-0.5f,-0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
 };
 
-const char *vertex_shader_source ="#version 330 core\n"
+const char *vertex_shader_source ="#version 430 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "layout (location = 1) in vec3 aColor;\n"
     "out vec3 ourColor;\n"
@@ -35,7 +35,7 @@ const char *vertex_shader_source ="#version 330 core\n"
     "   ourColor = aColor;\n"
     "}\0";
 
-const char *fragment_shader_source = "#version 330 core\n"
+const char *fragment_shader_source = "#version 430 core\n"
     "out vec4 FragColor;\n"
     "in vec3 ourColor;\n"
     "void main()\n"
