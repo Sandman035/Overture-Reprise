@@ -1,54 +1,68 @@
 #include "core/ecs.h"
 #include "core/log.h"
 #include "core/systems.h"
+#include "graphics/opengl.h"
 #include "platform/window.h"
-#include "graphics/vulkan.h"
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
+#include <stddef.h>
 
 typedef struct {
     window_t* window;
-    pipeline_t pipeline;
-    buffer_t vertex_buffer;
+    program_t program;
+    vertex_buffer_t vertex_buffer;
 } triangle_t;
 
 REGISTER_COMPONENT(triangle_t);
 
 typedef struct {
-    float pos[2];
+    float pos[3];
     float color[3];
 } vertex_t;
 
 const vertex_t vertices[] = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{0.0f,  0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f,-0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
 };
+
+const char *vertex_shader_source ="#version 330 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec3 aColor;\n"
+    "out vec3 ourColor;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos, 1.0);\n"
+    "   ourColor = aColor;\n"
+    "}\0";
+
+const char *fragment_shader_source = "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "in vec3 ourColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(ourColor, 1.0f);\n"
+    "}\n\0";
 
 void setup_triangle() {
     entity_t* win_ent = create_entity();
 
-    window_t window = create_window();
+    window_t* window = create_window();
 
     extern void add_window_t(entity_t*, void*);
-    add_window_t(win_ent, &window);
+    add_window_t(win_ent, window);
 
     entity_t* tri_ent = create_entity();
 
-    vertex_binding_t binding;
-    binding.binding_description = (VkVertexInputBindingDescription) {0, sizeof(vertex_t), VK_VERTEX_INPUT_RATE_VERTEX};
-    binding.attribute_count = 2;
-    VkVertexInputAttributeDescription attrib_desc[] = {
-        {0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(vertex_t, pos)},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(vertex_t, color)}
-    };
-    binding.attribute_description = attrib_desc;
-
     triangle_t triangle;
     triangle.window = get_comp(win_ent, GET_ID(window_t));
-    create_pipeline(&window, &triangle.pipeline, "res/shaders/vert.spv", "res/shaders/frag.spv", binding);
 
-    create_vertex_buffer(&window, &triangle.vertex_buffer, (void *)vertices, sizeof(vertices));
+    triangle.program = create_program();
+    add_shader(triangle.program, vertex_shader_source, VERTEX_SHADER);
+    add_shader(triangle.program, fragment_shader_source, FRAGMENT_SHADER);
+
+    triangle.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
+    add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, pos));
+    add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, color));
 
     add_triangle_t(tri_ent, &triangle);
 }
@@ -62,13 +76,14 @@ void render_triangle() {
     while (*ent_ptr != NULL) {
         triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
 
-        bind_graphics_pipeline(triangle->window, triangle->pipeline);
-        TRACE("Bound pipeline.");
-        bind_vertex_buffer(triangle->window, triangle->vertex_buffer, 0);
-        TRACE("Bound vertex buffers.");
-        /* draw verticies */
-        vkCmdDraw(triangle->window->vulkan_info.command_buffers[triangle->window->vulkan_info.current_frame], 3, 1, 0, 0);
-        TRACE("Drawn triangles.");
+        glfwMakeContextCurrent(triangle->window->window);
+
+        glUseProgram(triangle->program);
+
+        glBindVertexArray(triangle->vertex_buffer.VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        TRACE("Draw triangle.");
 
         ent_ptr++;
     }
@@ -104,8 +119,8 @@ void cleanup_triangle() {
     while (*ent_ptr != NULL) {
         triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
 
-        destroy_vertex_buffer(triangle->window, &triangle->vertex_buffer);
-        destroy_pipeline(triangle->window, &triangle->pipeline);
+        destroy_vertex_buffer(&triangle->vertex_buffer);
+        destroy_program(triangle->program);
 
         ent_ptr++;
     }

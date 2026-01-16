@@ -1,14 +1,12 @@
-#include "core/log.h"
 #include "core/systems.h"
+#include "graphics/opengl.h"
 #include "platform/window.h"
-#include "graphics/vulkan.h"
 
 //temp
 int should_exit = 0;
 
 int main() {
     init_windowing();
-    setup_vulkan();
 
     run_systems_sequential(SETUP);
     
@@ -25,6 +23,6 @@ int main() {
     run_systems_sequential(CLEANUP);
     run_systems_sequential(POST_CLEANUP);
 
-    cleanup_vulkan();
+    cleanup_opengl();
     cleanup_windowing();
 }

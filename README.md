@@ -42,4 +42,3 @@ Most likely I'll do a clustured forward renderer with IOT and a z prepass for ev
 These need to be installed and compiled separatly for now.
 
 - GLFW3
-- Vulkan
