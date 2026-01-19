@@ -23,7 +23,6 @@ const char* schedules[] = {
     "RENDER",
     "POST_RENDER",
     "CLEANUP",
-    "POST_CLEANUP"
 };
 
 // TODO: error handling for malloc
@@ -44,6 +43,23 @@ void register_system(system_ptr_t system, schedule_t schedule) {
     }
 
     temp->next = node;
+}
+
+void register_system_front(system_ptr_t system, schedule_t schedule) {
+    system_node_t* node = malloc(sizeof(system_node_t));
+    node->system = system;
+    node->next = NULL;
+
+    TRACE("Registered system %p in schedule: %s.", system, schedules[schedule]);
+    if (schedule_heads[schedule] == NULL) {
+        schedule_heads[schedule] = node;
+        return;
+    }
+
+    system_node_t* temp = schedule_heads[schedule];
+
+    node->next = temp;
+    schedule_heads[schedule] = node;
 }
 
 void register_system_before(system_ptr_t system, system_ptr_t target, schedule_t schedule) {

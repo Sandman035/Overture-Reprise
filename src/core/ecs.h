@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "core/log.h"
 #include "macros.h"
 
 /*
@@ -26,7 +27,8 @@ typedef struct {
 
 // component registration funcs and other tools
 uint64_t register_new_comp();
-void add_comp(entity_t* ent, uint64_t comp_id, void* data, size_t size);
+void add_comp_cpy(entity_t* ent, uint64_t comp_id, void* data, size_t size);
+void add_comp_store(entity_t* ent, uint64_t comp_id, void* data, size_t size);
 
 // entity funcs
 entity_t* create_entity();
@@ -54,19 +56,33 @@ signature_t create_sig(uint32_t n, ...);
 #define GET_SIG(component_struct) id_to_sig(GET_ID(component_struct))
 
 #define X_ID(X) X ## _id
+#define REGISTER_ID(X) \
+    if (X ## _id == 0) { \
+        X ## _id = register_new_comp(); \
+        TRACE("Registered id %d for %s", X ## _id, #X); \
+    }
 #define CREATE_SIG(...) ({ \
     extern uint64_t MAP_LIST(X_ID,__VA_ARGS__); \
+    MAP(REGISTER_ID,__VA_ARGS__)\
     create_sig(VARCOUNT(__VA_ARGS__), MAP_LIST(X_ID,__VA_ARGS__)); \
 })
 
-// using ddlexport on win add_struct_name will be called using dlsym well on linux
+// using ddlexport on win add_struct_name will be called using dlsym etc
 #define REGISTER_COMPONENT(struct_name) \
     uint64_t struct_name ## _id = 0; \
-    void add_ ## struct_name(entity_t* ent, void* data) { \
+    void add_ ## struct_name ## _cpy(entity_t* ent, void* data) { \
         if (struct_name ## _id == 0) { \
             struct_name ## _id = register_new_comp(); \
+            TRACE("Registered id %d for %s", struct_name ## _id, #struct_name); \
         } \
-        add_comp(ent, struct_name ## _id, data, sizeof(struct_name)); \
+        add_comp_cpy(ent, struct_name ## _id, data, sizeof(struct_name)); \
+    } \
+    void add_ ## struct_name ## _store(entity_t* ent, void* data) { \
+        if (struct_name ## _id == 0) { \
+            struct_name ## _id = register_new_comp(); \
+            TRACE("Registered id %d for %s", struct_name ## _id, #struct_name); \
+        } \
+        add_comp_store(ent, struct_name ## _id, data, sizeof(struct_name)); \
     } \
 
 #endif

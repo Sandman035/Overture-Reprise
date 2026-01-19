@@ -53,8 +53,8 @@ void setup_triangle() {
 
     window_t* window = create_window();
 
-    extern void add_window_t(entity_t*, void*);
-    add_window_t(win_ent, window);
+    extern void add_window_t_store(entity_t*, void*);
+    add_window_t_store(win_ent, window);
 
     entity_t* rect_ent = create_entity();
 
@@ -70,7 +70,7 @@ void setup_triangle() {
     add_attrib(&rect.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, pos));
     add_attrib(&rect.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, color));
 
-    add_rect_t(rect_ent, &rect);
+    add_rect_t_cpy(rect_ent, &rect);
 }
 
 REGISTER_SYSTEM(setup_triangle, SETUP);

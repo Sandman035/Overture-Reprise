@@ -9,6 +9,7 @@ void setup_gl_window() {
     TRACE("Created opengl context.");
 }
 
+// NOTE: this won't be necessary after obj rendering is implemented
 void begin_gl_window_render() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);

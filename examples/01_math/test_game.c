@@ -31,8 +31,7 @@ void setup_game() {
 
         entity_t* player = create_entity();
 
-        void* name_ptr = &player_name;
-        add_player_name_t(player, name_ptr);
+        add_player_name_t_cpy(player, &player_name);
 
         score_t score;
         score.wins = 0;
@@ -45,8 +44,7 @@ void setup_game() {
         score_t score2;
         deserialize(&score_t_fmt, buff, &score2);
 
-        void* score_ptr = &score2;
-        add_score_t(player, score_ptr);
+        add_score_t_cpy(player, &score2);
 
         printf("Would you like to add a new player? [y/n]\n");
 

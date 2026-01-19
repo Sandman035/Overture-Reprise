@@ -37,9 +37,12 @@ static void remove_sig(signature_t s1, const signature_t s2) {
 
 static int contains_sig(const signature_t s1, const signature_t s2) {
     uint64_t n = comp_num / CHAR_BIT + 1;
-    int result = 0;
+
+    int result = 1;
     while (n--) {
-        result |= s1[n] & s2[n];
+        int curr_result = 0;
+        curr_result |= (s1[n] & s2[n]) == s2[n];
+        result = result && curr_result;
     }
     return result;
 }
@@ -66,11 +69,13 @@ signature_t create_sig(uint32_t n, ...) {
     for (uint32_t i = 0; i < n; ++i) {
         uint64_t n_char = comp_num / CHAR_BIT + 1;
         uint64_t current_id = va_arg(args, uint64_t);
-        while (n_char--) {
-            long curr_num = current_id - (n_char * CHAR_BIT);
-            if (curr_num > 0) {
-                signature[n_char] |= (1 << (curr_num - 1));
-                break;
+        if (current_id != 0) {
+            while (n_char--) {
+                long curr_num = current_id - (n_char * CHAR_BIT);
+                if (curr_num > 0) {
+                    signature[n_char] |= (1 << (curr_num - 1));
+                    break;
+                }
             }
         }
     }
@@ -93,21 +98,40 @@ uint64_t register_new_comp() {
         temp = temp->next;
     }
 
-    TRACE("Registered component %ld.", comp_num);
+    //TRACE("Registered component %ld.", comp_num);
 
     return comp_num;
 }
 
-// DONE
-void add_comp(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
+// passed a stack pointer
+void add_comp_cpy(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
     if (ent == NULL) {
         WARN("Entity does not exist, failed to add component %ld.", comp_id);
         return;
     }
-    //malloc and memcpy might not be necessary although its a good safeguard maybe idk
+
     void* data_ptr = malloc(size);
     memcpy(data_ptr, data, size);
     ent->components[comp_id - 1] = data_ptr;
+
+    signature_t comp_sig = id_to_sig(comp_id);
+    signature_t ent_sig = ent->signature;
+
+    add_sig(ent_sig, comp_sig);
+
+    free(comp_sig);
+
+    TRACE("Added component %ld to entity %ld.", comp_id, ent->id);
+}
+
+// passed a heap pointer
+void add_comp_store(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
+    if (ent == NULL) {
+        WARN("Entity does not exist, failed to add component %ld.", comp_id);
+        return;
+    }
+
+    ent->components[comp_id - 1] = data;
 
     signature_t comp_sig = id_to_sig(comp_id);
     signature_t ent_sig = ent->signature;

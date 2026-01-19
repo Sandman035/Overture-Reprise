@@ -21,7 +21,6 @@ int main() {
     }
 
     run_systems_sequential(CLEANUP);
-    run_systems_sequential(POST_CLEANUP);
 
     cleanup_opengl();
     cleanup_windowing();
