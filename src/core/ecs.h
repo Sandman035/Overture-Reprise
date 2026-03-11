@@ -41,6 +41,8 @@ void remove_comp(entity_t* ent, uint64_t comp_id);
 
 entity_t** filter_entities(signature_t filter);
 
+void cleanup_ecs();
+
 #define FILTER_ENTITIES(...) ({ \
     signature_t filter = CREATE_SIG(__VA_ARGS__); \
     entity_t** list = filter_entities(filter); \

@@ -12,9 +12,15 @@ typedef enum {
 
 void print_log(log_level_t level, const char* file, int line, const char* fmt, ...);
 
+#ifndef NDEBUG
 #define TRACE(...) print_log(LEVEL_TRACE, __FILE__, __LINE__, __VA_ARGS__)
 #define DEBUG(...) print_log(LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
 #define INFO(...) print_log(LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#else
+#define TRACE(...)
+#define DEBUG(...)
+#define INFO(...)
+#endif
 #define WARN(...) print_log(LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
 #define ERROR(...) print_log(LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 #define FATAL(...) print_log(LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__)

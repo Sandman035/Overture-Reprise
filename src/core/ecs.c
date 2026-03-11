@@ -85,7 +85,6 @@ signature_t create_sig(uint32_t n, ...) {
     return signature;
 }
 
-// DONE
 uint64_t register_new_comp() {
     comp_num++;
 
@@ -97,8 +96,6 @@ uint64_t register_new_comp() {
         temp->entity.signature = realloc(temp->entity.signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
         temp = temp->next;
     }
-
-    //TRACE("Registered component %ld.", comp_num);
 
     return comp_num;
 }
@@ -143,7 +140,6 @@ void add_comp_store(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
     TRACE("Added component %ld to entity %ld.", comp_id, ent->id);
 }
 
-// DONE
 component_t get_comp(entity_t* ent, uint64_t comp_id) {
     if (ent == NULL) {
         WARN("Entity does not exist.");
@@ -165,7 +161,6 @@ component_t get_comp(entity_t* ent, uint64_t comp_id) {
     return NULL;
 }
 
-// DONE
 void remove_comp(entity_t* ent, uint64_t comp_id) {
     if (ent == NULL) {
         WARN("Entity does not exist, cannot remove component %ld.", comp_id);
@@ -185,7 +180,6 @@ void remove_comp(entity_t* ent, uint64_t comp_id) {
     TRACE("Removed component %ld from entity %ld", comp_id, ent->id);
 }
 
-// DONE? maybe entity needs to be malloc idk
 entity_t* create_entity() {
     entity_node_t* node = malloc(sizeof(entity_node_t));
     node->entity.id = ent_num;
@@ -209,7 +203,6 @@ entity_t* create_entity() {
     return &node->entity;
 }
 
-// DONE
 entity_t* get_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
@@ -224,7 +217,6 @@ entity_t* get_ent(uint64_t id) {
     return NULL;
 }
 
-// DONE unless entity_t is malloc
 void remove_ent(uint64_t id) {
     entity_node_t* temp = entity_head;
     while (temp != NULL) {
@@ -290,4 +282,28 @@ entity_t** filter_entities(signature_t filter) {
     TRACE("Filtered %ld entities with signature %s.", len, buff);
 
     return list;
+}
+
+void cleanup_ecs() {
+    uint64_t count = 0;
+    while (entity_head != NULL) {
+        entity_node_t* ent = entity_head;
+
+        uint64_t n = comp_num - 1;
+        while (n--) {
+            free(ent->entity.components[n]);
+            ent->entity.components[n] = NULL;
+        }
+        free(ent->entity.signature);
+        ent->entity.signature = NULL;
+
+        entity_head = ent->next;
+
+        free(ent);
+        ent = NULL;
+
+        count++;
+    }
+
+    TRACE("Cleaned up %d entities.", count);
 }

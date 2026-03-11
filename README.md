@@ -24,18 +24,11 @@ All entities will be able to be initialized from a map file. Some sort of genera
 
 Most of the design of the engine will relly on trying to make it as easy to use as possible, and many many hacks or overcomplicated designs will be implemented for this reason. This will mainly manifest in macro abuse, compiler abuse and many other fun ways to torture C purists.
 
-### Some sort of Clustered Renderer
+### Forward Clustered Renderer
 
-Using a clustered renderer a lot of lights can be renderer efficiently. Now i have two options for the rest of the engine architecture:
+Cluster Generation -> Shadow Pass -> Cubemap Z Pre-pass -> Cubemap Forward Pass -> Z Pre-pass -> Opaque Forward Pass -> Transparent Forward Pass -> OIT Blending -> Post Processing Pass(es)
 
-1. Forward Rendering
-2. Deffered rendering
-
-Forward Rendering would allow easy custom shader support while giving up a bit of performance that a deffered renderer can provide. Also MSAA...
-
-Deffered is faster, less versatile, cause you're pretty much stuck with one renderering pipeline though it is possible to implement another pass for custom shaders. Also no MSAA...
-
-Most likely I'll do a clustured forward renderer with IOT and a z prepass for even less lighting calculations. Most likely during the main forward pass a normal buffer will be created for SSAO and other post effects.
+For abmient oclusion and other screen space effects during the opaque forward pass a separate normal buffer can also be rendered, if required for the game. This render pipeline offers quite a bit of freedom and the forward rendering allows for custom shaders. I might implement a renderer configuration to turn off the passes not required by the specific game, or there is always the option to just comment it out.
 
 ## Dependencies
 

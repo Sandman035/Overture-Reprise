@@ -10,7 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-set(OVERTURE_LIBS glfw)
+set(OVERTURE_LIBS glfw m)
 set(LIB_DIR lib)
 file(GLOB LIB_DIRS "${LIB_DIR}/*")
 message(STATUS "LIB_DIRS: ${LIB_DIRS}")
@@ -44,7 +44,6 @@ add_library(overture SHARED ${SRC_FILES})
 target_link_libraries(overture PUBLIC ${OVERTURE_LIBS})
 target_include_directories(overture PUBLIC ${INCLUDE_DIRS})
 target_compile_options(overture PRIVATE "-fPIC")
-#target_compile_options(overture PRIVATE "-g")
 
 set(EXAMPLE_DIR examples)
 

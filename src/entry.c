@@ -1,3 +1,4 @@
+#include "core/ecs.h"
 #include "core/systems.h"
 #include "graphics/opengl.h"
 #include "platform/window.h"
@@ -24,4 +25,6 @@ int main() {
 
     cleanup_opengl();
     cleanup_windowing();
+
+    cleanup_ecs();
 }
