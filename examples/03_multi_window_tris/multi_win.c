@@ -2,6 +2,7 @@
 #include "core/log.h"
 #include "core/systems.h"
 #include "graphics/opengl.h"
+#include "math/types.h"
 #include "platform/window.h"
 #include <GLFW/glfw3.h>
 
@@ -14,8 +15,8 @@ typedef struct {
 REGISTER_COMPONENT(triangle_t);
 
 typedef struct {
-    float pos[3];
-    float color[3];
+    vec3_t pos;
+    vec3_t color;
 } vertex_t;
 
 const vertex_t vertices[] = {
@@ -72,8 +73,8 @@ void setup_multi_win() {
             triangle.vertex_buffer = create_vertex_buffer(sizeof(vertices2), (void*)vertices2);
         }
 
-        add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, pos));
-        add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, 6 * sizeof(float), offsetof(vertex_t, color));
+        add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, pos));
+        add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 
         add_triangle_t_cpy(tri_ent, &triangle);
     }
