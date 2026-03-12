@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 typedef struct {
-    window_t* window;
+    uint64_t window_id;
     program_t program;
     vertex_buffer_t vertex_buffer;
 } rect_t;
@@ -52,15 +52,17 @@ const char *fragment_shader_source = "#version 430 core\n"
 void setup_triangle() {
     entity_t* win_ent = create_entity();
 
-    window_t* window = create_window();
+    uint32_t window_id = create_window();
 
-    extern void add_window_t_store(entity_t*, void*);
-    add_window_t_store(win_ent, window);
+    window_comp_t win_comp = { window_id };
+
+    extern void add_window_comp_t_cpy(entity_t*, void*);
+    add_window_comp_t_cpy(win_ent, &win_comp);
 
     entity_t* rect_ent = create_entity();
 
     rect_t rect;
-    rect.window = get_comp(win_ent, GET_ID(window_t));
+    rect.window_id = window_id;
 
     rect.program = create_program();
     add_shader(rect.program, vertex_shader_source, VERTEX_SHADER);
@@ -83,7 +85,7 @@ void render_triangle() {
     while (*ent_ptr != NULL) {
         rect_t* rect = get_comp(*ent_ptr, GET_ID(rect_t));
 
-        glfwMakeContextCurrent(rect->window->window);
+        glfwMakeContextCurrent(get_window(rect->window_id)->window);
 
         glUseProgram(rect->program);
 
@@ -103,12 +105,12 @@ REGISTER_SYSTEM(render_triangle, RENDER);
 extern int should_exit;
 
 void update() {
-    entity_t** list = FILTER_ENTITIES(window_t);
+    entity_t** list = FILTER_ENTITIES(window_comp_t);
 
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
-        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
-        if (should_window_close(window)) {
+        window_comp_t* window = get_comp(*ent_ptr, GET_ID(window_comp_t));
+        if (should_window_close(get_window(window->id))) {
             should_exit = 1;
         }
         ent_ptr++;

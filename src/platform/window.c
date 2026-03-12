@@ -1,11 +1,25 @@
 #include "graphics/opengl.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform/window.h"
 #include "core/log.h"
 #include "core/ecs.h"
 #include "core/systems.h"
+
+typedef struct window_node_t {
+    uint64_t id;
+    window_t window;
+    struct window_node_t* next;
+} window_node_t;
+
+static window_node_t* window_list_head = NULL;
+static window_node_t* window_list_tail = NULL;
+
+static uint64_t current_win_id = 0;
+
+REGISTER_COMPONENT(window_comp_t);
 
 static void error_callback(int error, const char* description) {
     ERROR("GLFW error %d: %s.", error, description);
@@ -35,29 +49,53 @@ void cleanup_windowing() {
     TRACE("Cleaned up glfw.");
 }
 
-REGISTER_COMPONENT(window_t);
-
-// TODO: free window memory once window is closed
-window_t* create_window() {
-    window_t* window = malloc(sizeof(window_t));
+uint64_t create_window() {
+    window_node_t* node = malloc(sizeof(window_node_t));
+    node->next = NULL;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window->window = glfwCreateWindow(680, 480, "TEST GAME", NULL, NULL);
-    if (!window->window) {
+    node->window.window = glfwCreateWindow(680, 480, "TEST GAME", NULL, NULL);
+    if (!node->window.window) {
         FATAL("Could not create window.");
     }
 
-    TRACE("Created new window.");
+    node->id = current_win_id;
+    current_win_id++;
 
-    glfwSetFramebufferSizeCallback(window->window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(node->window.window, framebuffer_size_callback);
 
-    glfwMakeContextCurrent(window->window);
+    glfwMakeContextCurrent(node->window.window);
     setup_gl_window();
 
-    return window;
+    TRACE("Created new window.");
+
+    if (window_list_head == NULL) {
+        window_list_head = node;
+        window_list_tail = node;
+        return node->id;
+    }
+
+    window_list_tail->next = node;
+    window_list_tail = node;
+
+    return node->id;
+}
+
+window_t* get_window(uint64_t id) {
+    window_node_t* temp = window_list_head;
+    while (temp != NULL) {
+        if (temp->id == id) {
+            TRACE("Retrived window %ld.", id);
+            return &temp->window;
+        }
+        temp = temp->next;
+    }
+
+    WARN("Window %ld does not exist.", id);
+    return NULL;
 }
 
 uint32_t should_window_close(window_t* window) {
@@ -65,18 +103,16 @@ uint32_t should_window_close(window_t* window) {
 }
 
 void cleanup_windows() {
-    entity_t** list = FILTER_ENTITIES(window_t);
+    while (window_list_head != NULL) {
+        window_node_t* temp = window_list_head;
+        glfwDestroyWindow(temp->window.window);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
+        window_list_head = temp->next;
 
-        glfwDestroyWindow(window->window);
-        
-        ent_ptr++;
+        free(temp);
+        temp = NULL;
     }
 
-    free(list);
     TRACE("Destroyed windows.");
 }
 
@@ -85,41 +121,29 @@ REGISTER_SYSTEM(cleanup_windows, CLEANUP);
 void start_window_render() {
     glfwPollEvents();
 
-    entity_t** list = FILTER_ENTITIES(window_t);
-
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
-
-        glfwMakeContextCurrent(window->window);
+    window_node_t* temp = window_list_head;
+    while (temp != NULL) {
+        glfwMakeContextCurrent(temp->window.window);
 
         // TODO: pass window information such as clear color
 
         begin_gl_window_render();
 
-        ent_ptr++;
+        temp = temp->next;
     }
-
-    free(list);
 }
 
 REGISTER_SYSTEM(start_window_render, PRE_RENDER);
 
 void display_to_windows() {
-    entity_t** list = FILTER_ENTITIES(window_t);
+    window_node_t* temp = window_list_head;
+    while (temp != NULL) {
+        glfwMakeContextCurrent(temp->window.window);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
+        glfwSwapBuffers(temp->window.window);
 
-        glfwMakeContextCurrent(window->window); // TODO: might not be needed here but during rendering idk
-
-        glfwSwapBuffers(window->window);
-
-        ent_ptr++;
+        temp = temp->next;
     }
-
-    free(list);
 }
 
 REGISTER_SYSTEM(display_to_windows, POST_RENDER);
