@@ -1,0 +1,69 @@
+#ifndef OVERTURE_GRAPHICS_H
+#define OVERTURE_GRAPHICS_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include <glad/glad.h>
+
+#include <overture/math.h>
+
+/// Shader program.
+typedef uint32_t program_t;
+
+/// Types of shaders supported.
+typedef enum {
+    VERTEX_SHADER = GL_VERTEX_SHADER,
+    FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
+} shader_type_t;
+
+/// Create a shader program and return it.
+program_t create_program();
+
+/// Destroy a shader program.
+void destroy_program(program_t program);
+
+/// Add a shader to the program from a array of characters containing the shader source.
+void add_shader(program_t program, const char* shader_source, shader_type_t shader_type);
+
+/// Convoluted way of setting a uniform.
+#define SET_UNIFORM(type, program, name, ...) \
+    glUniform ## type(glGetUniformLocation(program, name), __VA_ARGS__);
+
+/// Vertex Buffer Data
+typedef struct {
+    uint32_t VAO;
+    uint32_t VBO;
+    uint32_t EBO;
+    uint32_t attrib_count;
+} vertex_buffer_t;
+
+/// Create a vertex buffer based on verticies.
+vertex_buffer_t create_vertex_buffer(size_t size, void* data);
+
+/// Destroy vertex buffer data.
+void destroy_vertex_buffer(vertex_buffer_t* vertex_buffer);
+
+/// Add an attribute to the vertex buffer.
+void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size_t stride, size_t offset);
+
+/// Add an index buffer to the vertex buffer.
+void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
+
+/// Opaque render object component.
+typedef struct {
+    uint64_t window_id;
+    program_t color_program;
+    program_t depth_program;
+    vertex_buffer_t vertex_buffer;
+    mat4_t world_transform;
+} opaque_render_object_t;
+
+/// Transparent render object component.
+typedef struct {
+    uint64_t window_id;
+    program_t program;
+    vertex_buffer_t vertex_buffer;
+    mat4_t world_transform;
+} transparent_render_object_t;
+
+#endif

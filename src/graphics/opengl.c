@@ -123,6 +123,7 @@ void destroy_vertex_buffer(vertex_buffer_t* vertex_buffer) {
     TRACE("Destroyed vertex buffer.");
 }
 
+// TODO: Create an attrib descriptor object, that stores a list of attrid contructor instructions, so later a "default" one can be applied automatically
 void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size_t stride, size_t offset) {
     glBindVertexArray(vertex_buffer->VAO);
     glVertexAttribPointer(vertex_buffer->attrib_count, size, type, GL_FALSE, stride, (void*)offset);

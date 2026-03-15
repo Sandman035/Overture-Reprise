@@ -6,9 +6,6 @@
 #include "core/ecs.h"
 #include "core/serialize_deserialize.h"
 #include "core/systems.h"
-#include "math/matrix.h"
-#include "math/types.h"
-#include "math/vector.h"
 
 //typedef struct {
 //    int wins;
@@ -26,22 +23,6 @@ typedef struct {
 REGISTER_COMPONENT(player_name_t);
 
 void setup_game() {
-    mat4_t m = mat4_identity();
-    printf("m:\n");
-    print_mat4(m);
-
-    m = scale_mat4(m, vec3(2, 2, 2));
-    printf("m:\n");
-    print_mat4(m);
-
-    m = translate_mat4(m, vec3(1, 2, 3));
-    printf("m:\n");
-    print_mat4(m);
-
-    vec3_t v = transform_vec3_mat4(vec3(1, 1, 1), m);
-
-    printf("v = [%f,%f,%f]\n", v.x, v.y, v.z);
-
     while(1) {
         printf("Please enter player name.\n");
 

@@ -10,8 +10,7 @@
 #include "graphics/render_obj.h"
 
 typedef struct window_node_t {
-    uint64_t id;
-    window_t window;
+    window_data_t window;
     struct window_node_t* next;
 } window_node_t;
 
@@ -20,18 +19,31 @@ static window_node_t* window_list_tail = NULL;
 
 static uint64_t current_win_id = 0;
 
-REGISTER_COMPONENT(window_comp_t);
+REGISTER_COMPONENT(window_t);
 
 static void error_callback(int error, const char* description) {
     ERROR("GLFW error %d: %s.", error, description);
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int32_t width, int32_t height) {
-    TRACE("Window: %p resized to %dx%d.", window, width, height);
+    window_data_t* user_window = glfwGetWindowUserPointer(window);
 
     glfwMakeContextCurrent(window);
 
     resize_gl_viewport(width, height);
+
+    if (user_window != NULL) {
+        // temp
+        user_window->context.width = width;
+        user_window->context.height = height;
+
+        // TODO: resize framebuffers
+
+        TRACE("Window %d resized to %dx%d with aspect ratio of %f.", user_window->id, width, height, (float)width / (float)height);
+
+        return;
+    }
+    TRACE("Window: %p resized to %dx%d with aspect ratio of %f.", window, width, height, (float)width / (float)height);
 }
 
 void init_windowing() {
@@ -66,7 +78,9 @@ uint64_t create_window() {
         FATAL("Could not create window.");
     }
 
-    node->id = current_win_id;
+    glfwSetWindowUserPointer(node->window.window, &node->window);
+
+    node->window.id = current_win_id;
     current_win_id++;
 
     glfwSetFramebufferSizeCallback(node->window.window, framebuffer_size_callback);
@@ -85,19 +99,19 @@ uint64_t create_window() {
     if (window_list_head == NULL) {
         window_list_head = node;
         window_list_tail = node;
-        return node->id;
+        return node->window.id;
     }
 
     window_list_tail->next = node;
     window_list_tail = node;
 
-    return node->id;
+    return node->window.id;
 }
 
-window_t* get_window(uint64_t id) {
+window_data_t* get_window(uint64_t id) {
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
-        if (temp->id == id) {
+        if (temp->window.id == id) {
             TRACE("Retrived window %ld.", id);
             return &temp->window;
         }
@@ -108,8 +122,8 @@ window_t* get_window(uint64_t id) {
     return NULL;
 }
 
-uint32_t should_window_close(window_t* window) {
-    return glfwWindowShouldClose(window->window);
+uint32_t should_window_close(uint64_t id) {
+    return glfwWindowShouldClose(get_window(id)->window);
 }
 
 void cleanup_windows() {

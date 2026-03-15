@@ -3,16 +3,6 @@
 
 #include "math/types.h"
 #include <math.h>
-#include <stdio.h>
-
-static void print_mat4(mat4_t m) {
-    printf("%f, %f, %f, %f \n%f, %f, %f, %f,\n%f, %f, %f, %f,\n%f, %f, %f, %f\n",
-        m.m00, m.m01, m.m02, m.m03,
-        m.m10, m.m11, m.m12, m.m13,
-        m.m20, m.m21, m.m22, m.m23,
-        m.m30, m.m31, m.m32, m.m33
-    );
-}
 
 static inline mat4_t mat4_identity() {
     return (mat4_t) {

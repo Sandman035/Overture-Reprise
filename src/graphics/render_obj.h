@@ -21,8 +21,6 @@ object_renderer_context create_object_renderer_context(uint32_t width, uint32_t 
 
 void clear_object_rederer_framebuffers(object_renderer_context* context);
 
-typedef struct window_t window_t;
-
 typedef struct {
     uint64_t window_id;
     program_t color_program;

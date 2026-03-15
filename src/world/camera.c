@@ -1,5 +1,4 @@
 #include "core/ecs.h"
-#include "core/log.h"
 #include "core/systems.h"
 #include "math/matrix.h"
 #include "platform/window.h"
@@ -14,10 +13,13 @@ void update_camera_proj() {
     while (*ent_ptr != NULL) {
         camera_t* camera = get_comp(*ent_ptr, GET_ID(camera_t));
 
-        // TODO: have some sort of control over these, like window resize etc.
+        window_data_t* window = get_window(camera->window_id);
+
+        // TODO: have some sort of control over these
+        camera->aspect_ratio = (float)window->context.width / (float)window->context.height;
         mat4_t proj = mat4_perspective_proj(camera->fov, camera->aspect_ratio, camera->near, camera->far);
 
-        get_window(camera->window_id)->context.proj = proj;
+        window->context.proj = proj;
 
         ent_ptr++;
     }

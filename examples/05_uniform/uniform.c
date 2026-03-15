@@ -1,19 +1,7 @@
+#include <overture/overture.h>
+
 #include "core/ecs.h"
-#include "core/log.h"
 #include "core/systems.h"
-#include "graphics/opengl.h"
-#include "math/types.h"
-#include "platform/window.h"
-#include <GLFW/glfw3.h>
-#include <stddef.h>
-
-typedef struct {
-    uint64_t window_id;
-    program_t program;
-    vertex_buffer_t vertex_buffer;
-} triangle_t;
-
-REGISTER_COMPONENT(triangle_t);
 
 typedef struct {
     vec3_t pos;
@@ -24,6 +12,10 @@ const vertex_t vertices[] = {
     {{0.0f,  0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
     {{-0.5f,-0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+};
+
+const uint32_t indicies[] = {
+    0, 1, 2
 };
 
 const char *vertex_shader_source ="#version 430 core\n"
@@ -50,46 +42,40 @@ void setup_triangle() {
 
     uint32_t window_id = create_window();
 
-    window_comp_t win_comp = { window_id };
+    window_t win_comp = { window_id };
 
-    extern void add_window_comp_t_cpy(entity_t*, void*);
-    add_window_comp_t_cpy(win_ent, &win_comp);
+    extern void add_window_t_cpy(entity_t*, void*);
+    add_window_t_cpy(win_ent, &win_comp);
 
     entity_t* tri_ent = create_entity();
 
-    triangle_t triangle;
+    opaque_render_object_t triangle;
     triangle.window_id = window_id;
 
-    triangle.program = create_program();
-    add_shader(triangle.program, vertex_shader_source, VERTEX_SHADER);
-    add_shader(triangle.program, fragment_shader_source, FRAGMENT_SHADER);
+    triangle.color_program = create_program();
+    add_shader(triangle.color_program, vertex_shader_source, VERTEX_SHADER);
+    add_shader(triangle.color_program, fragment_shader_source, FRAGMENT_SHADER);
 
     triangle.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
+    add_index_buffer(&triangle.vertex_buffer, sizeof(indicies), (void*)indicies);
     add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, pos));
     add_attrib(&triangle.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 
-    add_triangle_t_cpy(tri_ent, &triangle);
+    ADD_COMPONENT_CPY(opaque_render_object_t, tri_ent, &triangle);
 }
 
 REGISTER_SYSTEM(setup_triangle, SETUP);
 
 void render_triangle() {
-    entity_t** list = FILTER_ENTITIES(triangle_t);
+    entity_t** list = FILTER_ENTITIES(opaque_render_object_t);
 
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
-        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
+        opaque_render_object_t* triangle = get_comp(*ent_ptr, GET_ID(opaque_render_object_t));
 
-        glfwMakeContextCurrent(get_window(triangle->window_id)->window);
-
-        glUseProgram(triangle->program);
-
-        SET_UNIFORM(4f, triangle->program, "newColor", 0.2f, 0.2f, 0.2f, 1.0f);
-
-        glBindVertexArray(triangle->vertex_buffer.VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        TRACE("Draw triangle.");
+        // tf this works????? i am shocked 
+        // this saves me so much work, as long as nothing screws this up
+        SET_UNIFORM(4f, triangle->color_program, "newColor", 0.2f, 0.2f, 0.2f, 1.0f);
 
         ent_ptr++;
     }
@@ -97,17 +83,17 @@ void render_triangle() {
     free(list);
 }
 
-REGISTER_SYSTEM(render_triangle, RENDER);
+REGISTER_SYSTEM(render_triangle, PRE_RENDER);
 
 extern int should_exit;
 
 void update() {
-    entity_t** list = FILTER_ENTITIES(window_comp_t);
+    entity_t** list = FILTER_ENTITIES(window_t);
 
     entity_t** ent_ptr = list;
     while (*ent_ptr != NULL) {
-        window_comp_t* window = get_comp(*ent_ptr, GET_ID(window_comp_t));
-        if (should_window_close(get_window(window->id))) {
+        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
+        if (should_window_close(window->id)) {
             should_exit = 1;
         }
         ent_ptr++;
@@ -117,21 +103,3 @@ void update() {
 }
 
 REGISTER_SYSTEM(update, UPDATE);
-
-void cleanup_triangle() {
-    entity_t** list = FILTER_ENTITIES(triangle_t);
-
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        triangle_t* triangle = get_comp(*ent_ptr, GET_ID(triangle_t));
-
-        destroy_vertex_buffer(&triangle->vertex_buffer);
-        destroy_program(triangle->program);
-
-        ent_ptr++;
-    }
-
-    free(list);
-}
-
-REGISTER_SYSTEM(cleanup_triangle, CLEANUP);
