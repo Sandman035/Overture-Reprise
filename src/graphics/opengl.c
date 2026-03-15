@@ -2,6 +2,36 @@
 #include "core/log.h"
 #include <stddef.h>
 
+void APIENTRY gl_debug_callback(
+    GLenum source, 
+    GLenum type, 
+    unsigned int id, 
+    GLenum severity, 
+    GLsizei length, 
+    const char *message, 
+    const void *userParam
+) {
+    // TODO: more descriptive messages
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH: {
+            ERROR("%s", message);
+            break;
+        };
+        case GL_DEBUG_SEVERITY_MEDIUM: {
+            WARN("%s", message);
+            break;
+        };
+        case GL_DEBUG_SEVERITY_LOW: {
+            INFO("%s", message);
+            break;
+        };
+        case GL_DEBUG_SEVERITY_NOTIFICATION: {
+            TRACE("%s", message);
+            break;
+        };
+    }
+}
+
 void setup_gl_window() {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         ERROR("Failed to create opengl context.");
@@ -9,10 +39,16 @@ void setup_gl_window() {
     TRACE("Created opengl context.");
 }
 
-// NOTE: this won't be necessary after obj rendering is implemented
-void begin_gl_window_render() {
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+void setup_gl_window_debug_callback() {
+    int flags; 
+    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+        glDebugMessageCallback(gl_debug_callback, NULL);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+    }
 }
 
 void resize_gl_viewport(uint32_t width, uint32_t height) {

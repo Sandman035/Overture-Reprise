@@ -1,6 +1,7 @@
 #ifndef OVERTURE_WINDOW
 #define OVERTURE_WINDOW
 
+#include "graphics/render_obj.h"
 #include <stdint.h>
 #include <GLFW/glfw3.h>
 
@@ -14,12 +15,14 @@
 void init_windowing();
 void cleanup_windowing();
 
+// temp
 typedef struct window_comp_t {
     uint64_t id;
 } window_comp_t;
 
 typedef struct window_t {
     GLFWwindow* window;
+    object_renderer_context context;
 } window_t;
 
 uint64_t create_window();

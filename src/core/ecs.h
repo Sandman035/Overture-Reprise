@@ -87,4 +87,16 @@ signature_t create_sig(uint32_t n, ...);
         add_comp_store(ent, struct_name ## _id, data, sizeof(struct_name)); \
     } \
 
+#define ADD_COMPONENT_CPY(struct_name, entity, data) \
+    extern void add_ ## struct_name ## _cpy(entity_t*, void*); \
+    add_ ## struct_name ## _cpy(entity, data);
+
+#define ADD_COMPONENT_STORE(struct_name, entity, data) \
+    extern void add_ ## struct_name ## _store(entity_t*, void*); \
+    add_ ## struct_name ## _store(entity, data);
+
+#define ADD_COMPONENT_EMPTY(struct_name, entity) \
+    extern void add_ ## struct_name ## _store(entity_t*, void*); \
+    add_ ## struct_name ## _store(entity, NULL);
+
 #endif

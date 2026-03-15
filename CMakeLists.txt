@@ -30,7 +30,7 @@ endforeach()
 
 message(STATUS "INCLUDE_DIRS: ${INCLUDE_DIRS}")
 
-set(SRC_DIRS src src/core src/platform src/graphics)
+set(SRC_DIRS src src/core src/platform src/graphics src/world)
 
 foreach(src_dir ${SRC_DIRS})
     # maybe use GLOB_RECURSE and ommit the list of src dirs

@@ -10,7 +10,7 @@
 void cleanup_opengl();
 
 void setup_gl_window();
-void begin_gl_window_render();
+void setup_gl_window_debug_callback();
 
 void resize_gl_viewport(uint32_t width, uint32_t height);
 

@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "core/ecs.h"
 #include "core/systems.h"
+#include "graphics/render_obj.h"
 
 typedef struct window_node_t {
     uint64_t id;
@@ -57,6 +58,9 @@ uint64_t create_window() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    // TODO: have a debug define to not include this if not debuging
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+
     node->window.window = glfwCreateWindow(680, 480, "TEST GAME", NULL, NULL);
     if (!node->window.window) {
         FATAL("Could not create window.");
@@ -69,6 +73,12 @@ uint64_t create_window() {
 
     glfwMakeContextCurrent(node->window.window);
     setup_gl_window();
+
+    // NOTE: idk if this needs to be done for every window or not
+    setup_gl_window_debug_callback();
+
+    // TODO: configure this properly
+    node->window.context = create_object_renderer_context(680, 480);
 
     TRACE("Created new window.");
 
@@ -119,16 +129,17 @@ void cleanup_windows() {
 REGISTER_SYSTEM(cleanup_windows, CLEANUP);
 
 void start_window_render() {
-    glfwPollEvents();
+    glfwPollEvents(); // maybe this should'nt be here but at the start of the game loop
 
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
         glfwMakeContextCurrent(temp->window.window);
 
-        // TODO: pass window information such as clear color
+        // temp
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        begin_gl_window_render();
-
+        //clear_object_rederer_framebuffers(&temp->window.context);
         temp = temp->next;
     }
 }

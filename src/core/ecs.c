@@ -289,10 +289,15 @@ void cleanup_ecs() {
     while (entity_head != NULL) {
         entity_node_t* ent = entity_head;
 
-        uint64_t n = comp_num - 1;
-        while (n--) {
-            free(ent->entity.components[n]);
-            ent->entity.components[n] = NULL;
+        uint64_t n = comp_num;
+        while ((n--) - 1) {
+            // even if a component is technically empty fucks with the freeing process "invalid pointer"
+            signature_t sig = create_sig(1, n);
+            if (contains_sig(ent->entity.signature, sig)) {
+                free(ent->entity.components[n - 1]);
+            }
+            free(sig);
+            ent->entity.components[n - 1] = NULL;
         }
         free(ent->entity.signature);
         ent->entity.signature = NULL;
