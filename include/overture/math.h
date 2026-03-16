@@ -386,15 +386,17 @@ static inline vec3_t transform_vec3_mat4(vec3_t v, mat4_t m) {
     };
 }
 
-/// Potentially a 4x4 perspective projection matrix.
+/// 4x4 perspective projection matrix using horizontal fov, aspect ration width/height.
 static inline mat4_t mat4_perspective_proj(float fov, float aspect_ratio, float near, float far) {
-    float s = 1 / tanf((fov / 2) * (M_PI / 180));
+    float t = tanf((fov / 2) * (M_PI / 180));
+    float r = near * t;
+    float top = r / aspect_ratio;
 
     return (mat4_t) {
-        s, 0, 0, 0,
-        0, s, 0, 0,
-        0, 0, -(far / (far - near)), -1,
-        0, 0, -((far * near) / (far - near)), 9
+        near/r, 0, 0, 0,
+        0, near/top, 0, 0,
+        0, 0, -((far + near) / (far - near)), -((2 * far * near)/(far - near)),
+        0, 0, -1, 0
     };
 }
 
