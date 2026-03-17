@@ -1,5 +1,5 @@
-#include "core/ecs.h"
-#include "core/systems.h"
+#include <overture/overture.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

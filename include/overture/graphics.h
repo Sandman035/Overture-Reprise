@@ -35,6 +35,7 @@ typedef struct {
     uint32_t VBO;
     uint32_t EBO;
     uint32_t attrib_count;
+    uint64_t indices_count;
 } vertex_buffer_t;
 
 /// Create a vertex buffer based on verticies.
@@ -49,21 +50,20 @@ void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size
 /// Add an index buffer to the vertex buffer.
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 
-/// Opaque render object component.
-typedef struct {
-    uint64_t window_id;
-    program_t color_program;
-    program_t depth_program;
-    vertex_buffer_t vertex_buffer;
-    mat4_t world_transform;
-} opaque_render_object_t;
-
-/// Transparent render object component.
+/// Render object component
 typedef struct {
     uint64_t window_id;
     program_t program;
     vertex_buffer_t vertex_buffer;
     mat4_t world_transform;
-} transparent_render_object_t;
+} render_object_t;
+
+///  Z pre-pass component
+typedef struct {
+    program_t program;
+} z_pre_pass_t;
+
+/// Transparent material label component
+typedef struct {} transparent_material_t;
 
 #endif

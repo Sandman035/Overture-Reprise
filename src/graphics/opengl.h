@@ -35,6 +35,7 @@ typedef struct {
     uint32_t VBO;
     uint32_t EBO;
     uint32_t attrib_count;
+    uint64_t indices_count;
 } vertex_buffer_t;
 
 vertex_buffer_t create_vertex_buffer(size_t size, void* data);

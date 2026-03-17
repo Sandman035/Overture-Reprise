@@ -1,8 +1,8 @@
 // Most of this is from:
 // https://github.com/swansontec/map-macro/blob/master/map.h
 
-#ifndef MAP_H
-#define MAP_H
+#ifndef OVERTURE_PRIVATE_MACROS_H
+#define OVERTURE_PRIVATE_MACROS_H
 
 #define EVAL0(...) __VA_ARGS__
 #define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))

@@ -33,11 +33,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int32_t width, int32_t
     resize_gl_viewport(width, height);
 
     if (user_window != NULL) {
-        // temp
-        user_window->context.width = width;
-        user_window->context.height = height;
-
-        // TODO: resize framebuffers
+        rebuild_object_renderer_framebuffers(&user_window->context, width, height);
 
         TRACE("Window %d resized to %dx%d with aspect ratio of %f.", user_window->id, width, height, (float)width / (float)height);
 
@@ -151,9 +147,10 @@ void start_window_render() {
 
         // temp
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //clear_object_rederer_framebuffers(&temp->window.context);
+        clear_object_rederer_framebuffers(&temp->window.context);
+
         temp = temp->next;
     }
 }
@@ -164,6 +161,20 @@ void display_to_windows() {
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
         glfwMakeContextCurrent(temp->window.window);
+
+        int32_t width, height;
+        glfwGetWindowSize(temp->window.window, &width, &height);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, temp->window.context.opaque_fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        // Temp
+        glBlitFramebuffer(
+            0, 0, temp->window.context.width, temp->window.context.height,
+            0, 0, width, height,
+            GL_COLOR_BUFFER_BIT,
+            GL_LINEAR
+        );
 
         glfwSwapBuffers(temp->window.window);
 

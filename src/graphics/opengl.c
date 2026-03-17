@@ -1,6 +1,7 @@
 #include "graphics/opengl.h"
 #include "core/log.h"
 #include <stddef.h>
+#include <stdint.h>
 
 void APIENTRY gl_debug_callback(
     GLenum source, 
@@ -136,6 +137,8 @@ void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data) {
     glGenBuffers(1, &vertex_buffer->EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertex_buffer->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+
+    vertex_buffer->indices_count = size / sizeof(uint32_t);
 }
 
 void cleanup_opengl() {

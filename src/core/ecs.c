@@ -146,6 +146,11 @@ component_t get_comp(entity_t* ent, uint64_t comp_id) {
         return NULL;
     }
 
+    if (comp_id == 0) {
+        WARN("Component not registered.");
+        return NULL;
+    }
+
     signature_t comp_sig = id_to_sig(comp_id);
     signature_t ent_sig = ent->signature;
 

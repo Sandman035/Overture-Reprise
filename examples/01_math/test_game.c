@@ -1,18 +1,14 @@
-#include <GLFW/glfw3.h>
+#include <overture/overture.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "core/ecs.h"
-#include "core/serialize_deserialize.h"
-#include "core/systems.h"
-
-//typedef struct {
-//    int wins;
-//    int losses;
-//    int display;
-//} score_t;
-CREATE_SERIALIZABLE_STRUCT(score_t, (int, wins), (int, losses), (int, display));
+typedef struct {
+    int wins;
+    int losses;
+    int display;
+} score_t;
 
 REGISTER_COMPONENT(score_t);
 
@@ -38,13 +34,7 @@ void setup_game() {
         score.losses = 0;
         score.display = 1;
 
-        unsigned char buff[score_t_fmt.packed_size];
-        serialize(&score_t_fmt, &score, buff);
-
-        score_t score2;
-        deserialize(&score_t_fmt, buff, &score2);
-
-        add_score_t_cpy(player, &score2);
+        add_score_t_cpy(player, &score);
 
         printf("Would you like to add a new player? [y/n]\n");
 

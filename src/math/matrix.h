@@ -22,16 +22,13 @@ static inline mat4_t mat4_translation(vec3_t v) {
     };
 }
 
-// I have no idea if this is right, need to check
-// problem comes from -Z being forward instead of -X
-// should be correct unless typo
 // (https://en.wikipedia.org/wiki/Rotation_matrix#General_3D_rotations)
 static inline mat4_t mat4_rotation(vec3_t v) {
     return (mat4_t) {
         cosf(v.roll) * cosf(v.yaw), cosf(v.roll) * sinf(v.yaw) * sinf(v.pitch) - sinf(v.roll) * cosf(v.pitch), cosf(v.roll) * sinf(v.yaw) * cosf(v.pitch) + sinf(v.roll) * sinf(v.pitch), 0,
-        sinf(v.roll) * cosf(v.yaw), sinf(v.roll) * sinf(v.yaw) * sinf(v.pitch) + cosf(v.roll) * cosf(v.pitch), sinf(v.roll) * sinf(v.yaw) * cosf(v.pitch) + cosf(v.roll) * sinf(v.pitch), 0,
-        -sin(v.yaw),                cosf(v.yaw) * sinf(v.pitch),                                            cosf(v.yaw) * cosf(v.pitch),                                                  0,
-        0,                          0,                                                                       0,                                                                           1
+        sinf(v.roll) * cosf(v.yaw), sinf(v.roll) * sinf(v.yaw) * sinf(v.pitch) + cosf(v.roll) * cosf(v.pitch), sinf(v.roll) * sinf(v.yaw) * cosf(v.pitch) - cosf(v.roll) * sinf(v.pitch), 0,
+        -sinf(v.yaw),               cosf(v.yaw) * sinf(v.pitch),                                                cosf(v.yaw) * cosf(v.pitch),                                               0,
+        0,                          0,                                                                          0,                                                                          1
     };
 }
 
@@ -103,8 +100,8 @@ static inline mat4_t mat4_orthographics_proj(float left, float right, float top,
 
 static inline mat4_t mat4_perspective_proj(float fov, float aspect_ratio, float near, float far) {
     float t = tanf((fov / 2) * (M_PI / 180));
-    float r = near * t;
-    float top = r / aspect_ratio;
+    float top = near * t;
+    float r = top * aspect_ratio;
 
     return (mat4_t) {
         near/r, 0, 0, 0,
