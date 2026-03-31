@@ -108,7 +108,7 @@ window_data_t* get_window(uint64_t id) {
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
         if (temp->window.id == id) {
-            TRACE("Retrived window %ld.", id);
+            //TRACE("Retrived window %ld.", id);
             return &temp->window;
         }
         temp = temp->next;

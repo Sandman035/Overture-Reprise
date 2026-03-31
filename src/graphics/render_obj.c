@@ -38,25 +38,24 @@ void rebuild_object_renderer_framebuffers(object_renderer_context* context, uint
 }
 
 void create_object_renderer_framebuffers(object_renderer_context* context, uint32_t width, uint32_t height) {
-    // TODO: multisample
-
+    uint16_t samples = 4;
     // opaque pass
     glGenFramebuffers(1, &context->opaque_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
 
     glGenTextures(1, &context->opaque_color_texture);
-    glBindTexture(GL_TEXTURE_2D, context->opaque_color_texture);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, context->opaque_color_texture);
 
     // TODO: figure out optimal texture settings
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, context->opaque_color_texture, 0);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, width, height, GL_TRUE);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, context->opaque_color_texture, 0);
 
     glGenRenderbuffers(1, &context->opaque_depth_rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, context->opaque_depth_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, context->opaque_depth_rbo);
     
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -70,16 +69,16 @@ void create_object_renderer_framebuffers(object_renderer_context* context, uint3
     glBindFramebuffer(GL_FRAMEBUFFER, context->transparent_fbo);
 
     glGenTextures(1, &context->transparent_color_texture);
-    glBindTexture(GL_TEXTURE_2D, context->transparent_color_texture);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, context->transparent_color_texture);
 
     // TODO: figure out optimal texture settings
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, width, height, GL_TRUE);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
     
     // attach it to currently bound framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, context->transparent_color_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, context->transparent_color_texture, 0);
     
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         ERROR("Transparent pass framebuffer is not complete.");
@@ -119,18 +118,16 @@ void render_obj() {
 
     TRACE("Start depth pre-pass.");
 
-    entity_t** list = FILTER_ENTITIES(render_object_t, z_pre_pass_t);
+    entity_t* list = FILTER_ENTITIES(render_object_t, z_pre_pass_t);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        render_object_t* obj = get_comp(*ent_ptr, GET_ID(render_object_t));
-        z_pre_pass_t* z_pre_pass = get_comp(*ent_ptr, GET_ID(z_pre_pass_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+        z_pre_pass_t* z_pre_pass = get_comp(list[i], GET_ID(z_pre_pass_t));
 
         window_data_t* window = get_window(obj->window_id);
 
         if (window == NULL) {
             WARN("Window %ld doesn't exist skipping render obj %p.", obj->window_id, obj);
-            ent_ptr++;
             continue;
         }
 
@@ -152,8 +149,6 @@ void render_obj() {
 
         glBindVertexArray(obj->vertex_buffer.VAO);
         glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
-
-        ent_ptr++;
     }
 
     /***************/
@@ -163,15 +158,13 @@ void render_obj() {
 
     TRACE("Start opaque pass.");
 
-    ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        render_object_t* obj = get_comp(*ent_ptr, GET_ID(render_object_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
 
         window_data_t* window = get_window(obj->window_id);
 
         if (window == NULL) {
             WARN("Window %ld doesn't exist skipping render obj %p.", obj->window_id, obj);
-            ent_ptr++;
             continue;
         }
 
@@ -191,9 +184,6 @@ void render_obj() {
 
         glBindVertexArray(obj->vertex_buffer.VAO);
         glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
-        TRACE("Drew %ld vertices.", obj->vertex_buffer.indices_count);
-
-        ent_ptr++;
     }
 
     free(list);
@@ -206,15 +196,13 @@ void render_obj() {
 
     list = FILTER_ENTITIES(render_object_t, transparent_material_t);
 
-    ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        render_object_t* obj = get_comp(*ent_ptr, GET_ID(render_object_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
 
         window_data_t* window = get_window(obj->window_id);
 
         if (window == NULL) {
             WARN("Window %ld doesn't exist skipping render obj %p.", obj->window_id, obj);
-            ent_ptr++;
             continue;
         }
 
@@ -227,9 +215,7 @@ void render_obj() {
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &window->context.proj.m00);
 
         glBindVertexArray(obj->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
-
-        ent_ptr++;
+        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
     }
 
     // TODO: actually implement a proper OIT renderpass

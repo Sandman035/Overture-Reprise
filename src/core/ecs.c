@@ -3,281 +3,337 @@
 
 #include <limits.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct entity_node_t {
-    entity_t entity;
-    struct entity_node_t* next;
-} entity_node_t;
-
-static entity_node_t* entity_head = NULL;
-static entity_node_t* entity_tail = NULL;
-
-static uint64_t ent_num = 0;
-static uint64_t comp_num = 0;
-
 // TODO: IMPORTANT: error handling in case realloc doesn't work use tmp ptrs before moving pointer
 
+typedef struct {
+    signature_t  signature;
+    uint64_t     count;          /* live rows                              */
+    uint64_t*    entity_ids;     /* entity_ids[row] = entity               */
+    void**       columns;        /* columns[comp_id-1] = packed col or NULL */
+} archetype_t;
+
+typedef struct {
+    uint64_t  arch_idx;
+    uint64_t  row;
+    uint8_t   alive;
+} entity_record_t;
+
+static archetype_t*    archetypes       = NULL;
+static uint64_t        arch_count       = 0;
+
+static entity_record_t* entity_index     = NULL;
+
+static size_t*         comp_sizes       = NULL;
+
+static uint64_t ent_num  = 0;
+static uint64_t comp_num = 0;
+
+// Signature
+
+static inline uint64_t sig_size() {
+    return comp_num / CHAR_BIT + 1;
+}
+
 void add_sig(signature_t s1, const signature_t s2) {
-    uint64_t n = comp_num / CHAR_BIT + 1;
-    while (n--) {
-        s1[n] |= s2[n];
-    }
+    uint64_t n = sig_size();
+    while (n--) s1[n] |= s2[n];
 }
 
 static void remove_sig(signature_t s1, const signature_t s2) {
-    uint64_t n = comp_num / CHAR_BIT + 1;
-    while (n--) {
-        s1[n] &= ~s2[n];
-    }
+    uint64_t n = sig_size();
+    while (n--) s1[n] &= ~s2[n];
 }
 
 static int contains_sig(const signature_t s1, const signature_t s2) {
-    uint64_t n = comp_num / CHAR_BIT + 1;
-
-    int result = 1;
+    uint64_t n = sig_size();
     while (n--) {
-        int curr_result = 0;
-        curr_result |= (s1[n] & s2[n]) == s2[n];
-        result = result && curr_result;
+        if ((s1[n] & s2[n]) != s2[n]) return 0;
     }
-    return result;
+    return 1;
+}
+
+static int sig_equal(const signature_t s1, const signature_t s2) {
+    return memcmp(s1, s2, sig_size()) == 0;
+}
+
+static signature_t sig_alloc() {
+    return calloc(sig_size(), sizeof(uint8_t));
+}
+
+static signature_t sig_clone(const signature_t src) {
+    signature_t s = sig_alloc();
+    memcpy(s, src, sig_size());
+    return s;
 }
 
 signature_t id_to_sig(uint64_t id) {
-    signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
-    uint64_t n = comp_num / CHAR_BIT + 1;
+    signature_t sig = sig_alloc();
+    uint64_t n = sig_size();
     while (n--) {
-        long curr_num = id - (n * CHAR_BIT);
-        if (curr_num > 0) {
-            signature[n] |= (1 << (curr_num - 1));
-            break;
-        }
+        long curr = (long)id - (long)(n * CHAR_BIT);
+        if (curr > 0) { sig[n] |= (uint8_t)(1 << (curr - 1)); break; }
     }
-    return signature;
+    return sig;
 }
 
-signature_t create_sig(uint32_t n, ...) {
-    signature_t signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
-
+signature_t create_sig(uint32_t count, ...) {
+    signature_t sig = sig_alloc();
     va_list args;
-    va_start(args, n);
+    va_start(args, count);
+    for (uint32_t i = 0; i < count; i++) {
+        uint64_t id = va_arg(args, uint64_t);
+        if (id == 0) continue;
+        uint64_t n = sig_size();
+        while (n--) {
+            long curr = (long)id - (long)(n * CHAR_BIT);
+            if (curr > 0) { sig[n] |= (uint8_t)(1 << (curr - 1)); break; }
+        }
+    }
+    va_end(args);
+    return sig;
+}
 
-    for (uint32_t i = 0; i < n; ++i) {
-        uint64_t n_char = comp_num / CHAR_BIT + 1;
-        uint64_t current_id = va_arg(args, uint64_t);
-        if (current_id != 0) {
-            while (n_char--) {
-                long curr_num = current_id - (n_char * CHAR_BIT);
-                if (curr_num > 0) {
-                    signature[n_char] |= (1 << (curr_num - 1));
-                    break;
+// DONE
+uint64_t get_or_create_arch(signature_t sig) {
+    for (uint64_t i = 0; i < arch_count; i++) {
+        if (sig_equal(archetypes[i].signature, sig)) {
+            DEBUG("Got archetype: %ld.", i);
+            return i;
+        }
+    }
+
+    arch_count++;
+
+    archetypes = realloc(archetypes, arch_count * sizeof(archetype_t));
+
+    archetypes[arch_count - 1].signature = sig_clone(sig);
+    archetypes[arch_count - 1].count = 0;
+    archetypes[arch_count - 1].entity_ids = NULL;
+    archetypes[arch_count - 1].columns = calloc(comp_num, sizeof(void*));
+
+    DEBUG("Created new archetype: %ld.", arch_count - 1);
+
+    return arch_count - 1;
+}
+
+// DONE
+void arch_remove_row(archetype_t* arch, uint64_t row) {
+    arch->count--;
+
+    if (row != arch->count) {
+        // move last entity_id into row
+        arch->entity_ids[row] = arch->entity_ids[arch->count];
+        
+        // for all components move last one into row
+        for (int i = 0; i < comp_num; i++) {
+            signature_t comp_sig = id_to_sig(i + 1);
+
+            if (contains_sig(arch->signature, comp_sig)) {
+                memcpy(arch->columns[i] + row * comp_sizes[i], arch->columns[i] + arch->count * comp_sizes[i], comp_sizes[i]);
+            }
+            free(comp_sig);
+        }
+    }
+}
+
+// DONE
+void move_entity(entity_t ent, signature_t sig) {
+    // get or create arch
+    uint64_t new_arch_id = get_or_create_arch(sig);
+
+    archetype_t* old_arch = NULL;
+    if (entity_index[ent].arch_idx != UINT64_MAX) {
+        old_arch = &archetypes[entity_index[ent].arch_idx];
+    }
+    archetype_t* new_arch = &archetypes[new_arch_id];
+
+    // allocate space for entity
+    new_arch->count++;
+
+    new_arch->entity_ids = realloc(new_arch->entity_ids, new_arch->count * sizeof(entity_t));
+
+    // insert ent id into arch
+    new_arch->entity_ids[new_arch->count - 1] = ent;
+    entity_index[ent].arch_idx = new_arch_id;
+    uint64_t old_row = entity_index[ent].row;
+    uint64_t new_row = new_arch->count - 1;
+    entity_index[ent].row = new_row;
+
+    // allocate space for components
+    for (int i = 0; i < comp_num; i++) {
+        signature_t comp_sig = id_to_sig(i + 1);
+        if (contains_sig(sig, comp_sig)) {
+            new_arch->columns[i] = realloc(new_arch->columns[i], new_arch->count * comp_sizes[i]);
+
+            if (new_arch->columns[i] == NULL) {
+                ERROR("Column realloc failed.");
+            }
+
+            if (old_arch != NULL) {
+                if (contains_sig(old_arch->signature, comp_sig)) {
+                    // copy component memory
+                    memcpy(new_arch->columns[i] + new_row * comp_sizes[i], old_arch->columns[i] + old_row * comp_sizes[i], comp_sizes[i]);
                 }
             }
         }
+        free(comp_sig);
     }
 
-    va_end(args);
-
-    return signature;
+    if (old_arch != NULL) {
+        arch_remove_row(old_arch, old_row);
+    }
 }
 
-uint64_t register_new_comp() {
+// DONE
+void add_comp(entity_t ent, uint64_t comp_id, void* data) {
+    if (ent >= ent_num || !entity_index[ent].alive) return;
+    if (comp_id == 0 || comp_id > comp_num)         return;
+
+    signature_t sig = id_to_sig(comp_id);
+    if (entity_index[ent].arch_idx != UINT64_MAX) {
+        signature_t old_sig = archetypes[entity_index[ent].arch_idx].signature;
+        add_sig(sig, old_sig);
+
+        signature_t comp_sig = id_to_sig(comp_id);
+        if (contains_sig(old_sig, comp_sig)) {
+            TRACE("Entity %ld already contains component %ld", ent, comp_id);
+            free(comp_sig);
+            return;
+        }
+        free(comp_sig);
+    }
+
+    move_entity(ent, sig);
+
+    archetype_t* arch = &archetypes[entity_index[ent].arch_idx];
+    memcpy(arch->columns[comp_id - 1] + entity_index[ent].row * comp_sizes[comp_id - 1], data, comp_sizes[comp_id - 1]);
+    
+    TRACE("Added component %ld to entity %ld", comp_id, ent);
+
+    free(sig);
+}
+
+// DONE
+uint64_t register_new_comp(size_t size) {
     comp_num++;
 
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        temp->entity.components = realloc(temp->entity.components, comp_num * sizeof(component_t));
+    comp_sizes = realloc(comp_sizes, comp_num * sizeof(size_t));
 
-        // maybe we should only realloc when signature overflows
-        temp->entity.signature = realloc(temp->entity.signature, (comp_num / CHAR_BIT + 1) * sizeof(unsigned char));
-        temp = temp->next;
+    comp_sizes[comp_num - 1] = size;
+
+    for (int i = 0; i < arch_count; i++) {
+        if (comp_num % CHAR_BIT == 1) {
+            archetypes[i].signature = realloc(archetypes[i].signature, sig_size() * sizeof(uint8_t));
+            archetypes[i].signature[sig_size() - 1] = 0;
+        }
+        archetypes[i].columns = realloc(archetypes[i].columns, comp_num * sizeof(void*));
+        archetypes[i].columns[comp_num - 1] = NULL;
     }
 
     return comp_num;
 }
 
-// passed a stack pointer
-void add_comp_cpy(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
-    if (ent == NULL) {
-        WARN("Entity does not exist, failed to add component %ld.", comp_id);
-        return;
-    }
+// DONE
+entity_t create_entity() {
+    entity_t id;
+    id = ent_num++;
 
-    void* data_ptr = malloc(size);
-    memcpy(data_ptr, data, size);
-    ent->components[comp_id - 1] = data_ptr;
+    entity_index = realloc(entity_index, ent_num * sizeof(entity_record_t));
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = ent->signature;
+    entity_record_t* rec = &entity_index[id];
+    rec->arch_idx = UINT64_MAX;
+    rec->row   = 0;
+    rec->alive = 1;
 
-    add_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
-
-    TRACE("Added component %ld to entity %ld.", comp_id, ent->id);
+    TRACE("Create entity %ld.", id);
+    return id;
 }
 
-// passed a heap pointer
-void add_comp_store(entity_t* ent, uint64_t comp_id, void *data, size_t size) {
-    if (ent == NULL) {
-        WARN("Entity does not exist, failed to add component %ld.", comp_id);
-        return;
-    }
+// DONE
+void remove_ent(entity_t ent) {
+    if (ent >= ent_num || !entity_index[ent].alive) return;
 
-    ent->components[comp_id - 1] = data;
+    entity_record_t* rec = &entity_index[ent];
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = ent->signature;
+    arch_remove_row(&archetypes[rec->arch_idx], rec->row);
 
-    add_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
-
-    TRACE("Added component %ld to entity %ld.", comp_id, ent->id);
+    rec->arch_idx = UINT64_MAX;
+    rec->alive = 0;
 }
 
-component_t get_comp(entity_t* ent, uint64_t comp_id) {
-    if (ent == NULL) {
-        WARN("Entity does not exist.");
+// DONE
+component_t get_comp(entity_t ent, uint64_t comp_id) {
+    if (ent >= ent_num || !entity_index[ent].alive) {
+        return NULL;
+    }
+    if (comp_id == 0 || comp_id > comp_num) {
         return NULL;
     }
 
-    if (comp_id == 0) {
-        WARN("Component not registered.");
+    entity_record_t* rec = &entity_index[ent];
+    if (rec->arch_idx == UINT64_MAX) {
         return NULL;
     }
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = ent->signature;
-
-    int result = contains_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
-
-    if (result) {
-        TRACE("Retrieved component %ld from entity %ld.", comp_id, ent->id);
-        return ent->components[comp_id - 1];
+    void* col = archetypes[rec->arch_idx].columns[comp_id - 1];
+    if (col == NULL) {
+        return NULL;
     }
-    WARN("Entity %ld does not contain component %ld.", ent->id, comp_id);
-    return NULL;
+
+    //TRACE("Retreived component %ld from entity %ld.", comp_id, ent);
+    return col + rec->row * comp_sizes[comp_id - 1];
 }
 
-void remove_comp(entity_t* ent, uint64_t comp_id) {
-    if (ent == NULL) {
-        WARN("Entity does not exist, cannot remove component %ld.", comp_id);
-        return;
-    }
+void remove_comp(entity_t ent, uint64_t comp_id) {
+    if (ent >= ent_num || !entity_index[ent].alive) return;
+    if (comp_id == 0 || comp_id > comp_num)         return;
 
-    free(ent->components[comp_id - 1]);
-    ent->components[comp_id - 1] = NULL;
+    entity_record_t* rec = &entity_index[ent];
+    if (rec->arch_idx == UINT64_MAX)                           return;
 
-    signature_t comp_sig = id_to_sig(comp_id);
-    signature_t ent_sig = ent->signature;
-
-    remove_sig(ent_sig, comp_sig);
-
-    free(comp_sig);
-
-    TRACE("Removed component %ld from entity %ld", comp_id, ent->id);
-}
-
-entity_t* create_entity() {
-    entity_node_t* node = malloc(sizeof(entity_node_t));
-    node->entity.id = ent_num;
-    node->entity.components = calloc(comp_num, sizeof(component_t));
-    node->entity.signature = calloc(comp_num / CHAR_BIT + 1, sizeof(unsigned char));
-    node->next = NULL;
-
-    ent_num++;
-
-    TRACE("Created entity %ld.", ent_num - 1);
-
-    if (entity_head == NULL) {
-        entity_head = node;
-        entity_tail = node;
-        return &node->entity;
-    }
-
-    entity_tail->next = node;
-    entity_tail = node;
-
-    return &node->entity;
-}
-
-entity_t* get_ent(uint64_t id) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->entity.id == id) {
-            TRACE("Retrieved entity %ld.", id);
-            return &temp->entity;
-        }
-        temp = temp->next;
-    }
-
-    ERROR("Entity %ld does not exist.", id);
-    return NULL;
-}
-
-void remove_ent(uint64_t id) {
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (temp->next->entity.id == id) {
-            entity_node_t* ent = temp->next;
-
-            uint64_t n = comp_num;
-            while (n--) {
-                free(ent->entity.components[n]);
-                ent->entity.components[n] = NULL;
-            }
-            free(ent->entity.signature);
-            ent->entity.signature = NULL;
-
-            temp->next = ent->next;
-
-            free(ent);
-            ent = NULL;
-
-            TRACE("Removed entity %ld.", id);
-            return;
-        }
-        temp = temp->next;
-    }
-
-    WARN("Entity %ld does not exist, it cannot be removed.\n", id);
-    return;
-}
-
-entity_t** filter_entities(signature_t filter) {
-    uint64_t len = 0;
-    entity_node_t* temp = entity_head;
-    while (temp != NULL) {
-        if (contains_sig(temp->entity.signature, filter)) {
-            len += 1;
-        }
-        temp = temp->next;
-    }
-
-    entity_t** list = malloc((len + 1) * sizeof(entity_t));
+    // TODO: check if entity contains component
     
-    uint64_t idx = 0;
-    temp = entity_head;
-    while (temp != NULL) {
-        if (contains_sig(temp->entity.signature, filter)) {
-            list[idx++] = &temp->entity;
+    uint64_t old_arch_id = rec->arch_idx;
+
+    signature_t new_sig = sig_clone(archetypes[old_arch_id].signature);
+    signature_t comp_sig = id_to_sig(comp_id);
+    remove_sig(new_sig, comp_sig);
+    free(comp_sig);
+
+    move_entity(ent, new_sig);
+    free(new_sig);
+}
+
+// DONE
+entity_t* filter_entities(signature_t filter) {
+    uint64_t len = 0;
+
+    for (uint64_t i = 0; i < arch_count; i++) {
+        if (contains_sig(archetypes[i].signature, filter)) {
+            len += archetypes[i].count;
         }
-        temp = temp->next;
     }
 
-    list[idx++] = NULL;
+    entity_t* list = malloc((len + 1) * sizeof(entity_t));
+
+    uint64_t idx = 0;
+    for (uint64_t i = 0; i < arch_count; i++) {
+        if (contains_sig(archetypes[i].signature, filter)) {
+            memcpy(list + idx, archetypes[i].entity_ids, archetypes[i].count * sizeof(entity_t));
+            idx += archetypes[i].count;
+        }
+    }
 
     char buff[100] = "";
-    uint64_t n = comp_num / CHAR_BIT + 1;
+    uint64_t n = sig_size();
     while (n--) {
-        if (n == comp_num / CHAR_BIT) {
+        if (n == sig_size() - 1) {
             sprintf(buff,"%s%8.8B", buff, filter[n]);
             continue;
         }
@@ -286,34 +342,10 @@ entity_t** filter_entities(signature_t filter) {
 
     TRACE("Filtered %ld entities with signature %s.", len, buff);
 
+    list[len] = ENTITY_INVALID;
     return list;
 }
 
 void cleanup_ecs() {
-    uint64_t count = 0;
-    while (entity_head != NULL) {
-        entity_node_t* ent = entity_head;
-
-        uint64_t n = comp_num;
-        while ((n--) - 1) {
-            // even if a component is technically empty fucks with the freeing process "invalid pointer"
-            signature_t sig = create_sig(1, n);
-            if (contains_sig(ent->entity.signature, sig)) {
-                free(ent->entity.components[n - 1]);
-            }
-            free(sig);
-            ent->entity.components[n - 1] = NULL;
-        }
-        free(ent->entity.signature);
-        ent->entity.signature = NULL;
-
-        entity_head = ent->next;
-
-        free(ent);
-        ent = NULL;
-
-        count++;
-    }
-
-    TRACE("Cleaned up %d entities.", count);
+    // TODO: Free all memory
 }

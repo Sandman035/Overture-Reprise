@@ -16,19 +16,17 @@ void register_system(system_ptr_t system, schedule_t schedule);
 void register_system_front(system_ptr_t system, schedule_t schedule);
 
 typedef uint8_t* signature_t;
-typedef struct entity_t entity_t;
+typedef uint64_t entity_t;
 
-uint64_t register_new_comp();
-void add_comp_cpy(entity_t* ent, uint64_t comp_id, void* data, size_t size);
-void add_comp_store(entity_t* ent, uint64_t comp_id, void* data, size_t size);
+uint64_t register_new_comp(size_t size);
 signature_t id_to_sig(uint64_t id);
 signature_t create_sig(uint32_t n, ...);
-entity_t** filter_entities(signature_t filter);
+entity_t* filter_entities(signature_t filter);
 
 #define X_ID(X) X ## _id
 #define REGISTER_ID(X) \
     if (X ## _id == 0) { \
-        X ## _id = register_new_comp(); \
+        X ## _id = register_new_comp(sizeof(X)); \
         TRACE("Registered id %d for %s", X ## _id, #X); \
     }
 

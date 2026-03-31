@@ -78,12 +78,12 @@ const char *fragment_shader_source = "#version 430 core\n"
 
 void setup_cube() {
     for (int i = 0; i < 3; i++) {
-        entity_t* window_ent = create_entity();
+        entity_t window_ent = create_entity();
         window_t window;
         window.id = create_window();
-        ADD_COMPONENT_CPY(window_t, window_ent, &window);
+        ADD_COMPONENT(window_t, window_ent, &window);
 
-        entity_t* cube_ent = create_entity();
+        entity_t cube_ent = create_entity();
  
         render_object_t cube;
  
@@ -109,11 +109,11 @@ void setup_cube() {
         cube_tranform.rot = vec3(0, 0, 0);
  
         ADD_COMPONENT_EMPTY(cube_t, cube_ent);
-        ADD_COMPONENT_CPY(render_object_t, cube_ent, &cube);
-        ADD_COMPONENT_CPY(z_pre_pass_t, cube_ent, &z_pre);
-        ADD_COMPONENT_CPY(transform_t, cube_ent, &cube_tranform);
+        ADD_COMPONENT(render_object_t, cube_ent, &cube);
+        ADD_COMPONENT(z_pre_pass_t, cube_ent, &z_pre);
+        ADD_COMPONENT(transform_t, cube_ent, &cube_tranform);
 
-        entity_t* camera_ent = create_entity();
+        entity_t camera_ent = create_entity();
         camera_t camera;
         camera.window_id = window.id;
         camera.fov = 45.0f;
@@ -126,23 +126,20 @@ void setup_cube() {
         camera_transform.pos = vec3(0, 0, 5);
         camera_transform.rot = vec3(0, 0, 0);
 
-        ADD_COMPONENT_CPY(camera_t, camera_ent, &camera);
-        ADD_COMPONENT_CPY(transform_t, camera_ent, &camera_transform);
+        ADD_COMPONENT(camera_t, camera_ent, &camera);
+        ADD_COMPONENT(transform_t, camera_ent, &camera_transform);
     }
 }
 
 REGISTER_SYSTEM(setup_cube, SETUP);
 
 void update_cube() {
-    entity_t** list = FILTER_ENTITIES(cube_t, transform_t);
+    entity_t* list = FILTER_ENTITIES(cube_t, transform_t);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        transform_t* transform = get_comp(*ent_ptr, GET_ID(transform_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        transform_t* transform = get_comp(list[i], GET_ID(transform_t));
 
         transform->rot = vec3(glfwGetTime(), glfwGetTime(), glfwGetTime());
-
-        ent_ptr++;
     }
 
     free(list);
@@ -152,15 +149,13 @@ REGISTER_SYSTEM(update_cube, UPDATE);
 
 extern int should_exit;
 void update() {
-    entity_t** list = FILTER_ENTITIES(window_t);
+    entity_t* list = FILTER_ENTITIES(window_t);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        window_t* window = get_comp(*ent_ptr, GET_ID(window_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        window_t* window = get_comp(list[i], GET_ID(window_t));
         if (should_window_close(window->id)) {
             should_exit = 1;
         }
-        ent_ptr++;
     }
 
     free(list);

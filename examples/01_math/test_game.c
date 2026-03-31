@@ -25,16 +25,16 @@ void setup_game() {
         player_name_t player_name;
         scanf("%s", player_name.name);
 
-        entity_t* player = create_entity();
+        entity_t player = create_entity();
 
-        add_player_name_t_cpy(player, &player_name);
+        add_player_name_t(player, &player_name);
 
         score_t score;
         score.wins = 0;
         score.losses = 0;
         score.display = 1;
 
-        add_score_t_cpy(player, &score);
+        add_score_t(player, &score);
 
         printf("Would you like to add a new player? [y/n]\n");
 
@@ -56,12 +56,11 @@ REGISTER_SYSTEM(setup_game, SETUP);
 extern int should_exit;
 
 void update_game() {
-    entity_t** list = FILTER_ENTITIES(score_t, player_name_t);
+    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        score_t* score = get_comp(*ent_ptr, GET_ID(score_t));
-        player_name_t* name = get_comp(*ent_ptr, GET_ID(player_name_t));
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        score_t* score = get_comp(list[i], GET_ID(score_t));
+        player_name_t* name = get_comp(list[i], GET_ID(player_name_t));
 
         int n1 = rand() % 100;
         int n2 = rand() % 100;
@@ -84,8 +83,6 @@ void update_game() {
             score->display = 0;
             should_exit = 1;
         }
-
-        ent_ptr++;
     }
 
     free(list);
@@ -94,15 +91,13 @@ void update_game() {
 REGISTER_SYSTEM(update_game, UPDATE);
 
 void print_scores() {
-    entity_t** list = FILTER_ENTITIES(score_t);
+    entity_t* list = FILTER_ENTITIES(score_t);
 
-    entity_t** ent_ptr = list;
-    while (*ent_ptr != NULL) {
-        score_t* score = get_comp(*ent_ptr, score_t_id);
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        score_t* score = get_comp(list[i], score_t_id);
         if (score->display) {
             printf("wins: %d, losses: %d\n", score->wins, score->losses);
         }
-        ent_ptr++;
     }
 
     free(list);

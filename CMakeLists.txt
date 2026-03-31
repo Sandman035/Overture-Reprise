@@ -15,7 +15,7 @@ set(LIB_DIR lib)
 file(GLOB LIB_DIRS "${LIB_DIR}/*")
 message(STATUS "LIB_DIRS: ${LIB_DIRS}")
 
-set(INCLUDE_DIRS include src)
+set(INCLUDE_DIRS src)
 
 foreach(lib ${LIB_DIRS})
     file(GLOB_RECURSE LIB_FILES "${lib}/src/*.c")

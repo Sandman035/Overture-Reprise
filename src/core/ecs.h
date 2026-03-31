@@ -8,44 +8,31 @@
 #include "core/log.h"
 #include "macros.h"
 
-/*
- * TODO: maybe have an entity struct that contains both the component list and signature then
- *       every time either an ent_id or an entity_t is need this new struct can be passed
- *       streamlining the process
- *
- *       this requires a full rework of the ecs
- */
-
 typedef uint8_t* signature_t;
 typedef void* component_t;
+typedef uint64_t entity_t;
 
-typedef struct {
-    uint64_t id;
-    component_t* components;
-    signature_t signature;
-} entity_t;
+#define ENTITY_INVALID UINT64_MAX
 
 // component registration funcs and other tools
-uint64_t register_new_comp();
-void add_comp_cpy(entity_t* ent, uint64_t comp_id, void* data, size_t size);
-void add_comp_store(entity_t* ent, uint64_t comp_id, void* data, size_t size);
+uint64_t register_new_comp(size_t size);
+void add_comp(entity_t ent, uint64_t comp_id, void* data);
 
 // entity funcs
-entity_t* create_entity();
-void remove_ent(uint64_t id);
-entity_t* get_ent(uint64_t id);
+entity_t create_entity();
+void remove_ent(entity_t id);
 
 // component funcs
-component_t get_comp(entity_t* ent, uint64_t comp_id);
-void remove_comp(entity_t* ent, uint64_t comp_id);
+component_t get_comp(entity_t ent, uint64_t comp_id);
+void remove_comp(entity_t ent, uint64_t comp_id);
 
-entity_t** filter_entities(signature_t filter);
+entity_t* filter_entities(signature_t filter);
 
 void cleanup_ecs();
 
 #define FILTER_ENTITIES(...) ({ \
     signature_t filter = CREATE_SIG(__VA_ARGS__); \
-    entity_t** list = filter_entities(filter); \
+    entity_t* list = filter_entities(filter); \
     free(filter); \
     list; \
 })
@@ -60,7 +47,7 @@ signature_t create_sig(uint32_t n, ...);
 #define X_ID(X) X ## _id
 #define REGISTER_ID(X) \
     if (X ## _id == 0) { \
-        X ## _id = register_new_comp(); \
+        X ## _id = register_new_comp(sizeof(X)); \
         TRACE("Registered id %d for %s", X ## _id, #X); \
     }
 #define CREATE_SIG(...) ({ \
@@ -72,31 +59,21 @@ signature_t create_sig(uint32_t n, ...);
 // using ddlexport on win add_struct_name will be called using dlsym etc
 #define REGISTER_COMPONENT(struct_name) \
     uint64_t struct_name ## _id = 0; \
-    void add_ ## struct_name ## _cpy(entity_t* ent, void* data) { \
+    void add_ ## struct_name(entity_t ent, void* data) { \
         if (struct_name ## _id == 0) { \
-            struct_name ## _id = register_new_comp(); \
+            struct_name ## _id = register_new_comp(sizeof(struct_name)); \
+            DEBUG("SIZE: %zu", sizeof(struct_name)); \
             TRACE("Registered id %d for %s", struct_name ## _id, #struct_name); \
         } \
-        add_comp_cpy(ent, struct_name ## _id, data, sizeof(struct_name)); \
-    } \
-    void add_ ## struct_name ## _store(entity_t* ent, void* data) { \
-        if (struct_name ## _id == 0) { \
-            struct_name ## _id = register_new_comp(); \
-            TRACE("Registered id %d for %s", struct_name ## _id, #struct_name); \
-        } \
-        add_comp_store(ent, struct_name ## _id, data, sizeof(struct_name)); \
-    } \
+        add_comp(ent, struct_name ## _id, data); \
+    }
 
-#define ADD_COMPONENT_CPY(struct_name, entity, data) \
-    extern void add_ ## struct_name ## _cpy(entity_t*, void*); \
-    add_ ## struct_name ## _cpy(entity, data);
-
-#define ADD_COMPONENT_STORE(struct_name, entity, data) \
-    extern void add_ ## struct_name ## _store(entity_t*, void*); \
-    add_ ## struct_name ## _store(entity, data);
+#define ADD_COMPONENT(struct_name, entity, data) \
+    extern void add_ ## struct_name (entity_t, void*); \
+    add_ ## struct_name (entity, data);
 
 #define ADD_COMPONENT_EMPTY(struct_name, entity) \
-    extern void add_ ## struct_name ## _store(entity_t*, void*); \
-    add_ ## struct_name ## _store(entity, NULL);
+    extern void add_ ## struct_name (entity_t, void*); \
+    add_ ## struct_name (entity, NULL);
 
 #endif
