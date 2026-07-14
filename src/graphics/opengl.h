@@ -2,6 +2,7 @@
 #define OVERTURE_OPENGL
 
 #include "assets/asset_manager.h"
+#include "core/log.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <glad/glad.h>
@@ -30,7 +31,14 @@ void add_shader_asset(program_t program, asset_handle_t shader_handle);
 // NOTE: idk if ill keep this tho it does save a bit of work tho its hard to document
 // TODO: maybe add a way to check if uniform exists and only set it if it does
 #define SET_UNIFORM(type, program, name, ...) \
-    glUniform ## type(glGetUniformLocation(program, name), __VA_ARGS__);
+    { \
+        int32_t loc = glGetUniformLocation(program, name); \
+        if (loc == -1) { \
+            WARN("No uniform by the name \"%s\" exists in program.", name); \
+        } else { \
+            glUniform ## type(glGetUniformLocation(program, name), __VA_ARGS__); \
+        } \
+    }
 
 typedef struct {
     uint32_t VAO;
