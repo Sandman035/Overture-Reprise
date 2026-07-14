@@ -6,5 +6,6 @@
 #include <overture/math.h>
 #include <overture/graphics.h>
 #include <overture/world.h>
+#include <overture/assets.h>
 
 #endif

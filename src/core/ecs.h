@@ -62,7 +62,6 @@ signature_t create_sig(uint32_t n, ...);
     void add_ ## struct_name(entity_t ent, void* data) { \
         if (struct_name ## _id == 0) { \
             struct_name ## _id = register_new_comp(sizeof(struct_name)); \
-            DEBUG("SIZE: %zu", sizeof(struct_name)); \
             TRACE("Registered id %d for %s", struct_name ## _id, #struct_name); \
         } \
         add_comp(ent, struct_name ## _id, data); \

@@ -15,6 +15,7 @@ static system_node_t* schedule_heads[NUM_OF_SCHEDULES];
 
 // maybe figure out a way to automatically update this with macros or smt
 const char* schedules[] = {
+    "STARTUP",
     "SETUP",
     "PRE_UPDATE",
     "UPDATE",

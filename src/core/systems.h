@@ -4,6 +4,7 @@
 typedef void(*system_ptr_t)(void);
 
 typedef enum {
+    STARTUP,
     SETUP,
     PRE_UPDATE,
     UPDATE,

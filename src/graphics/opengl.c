@@ -1,5 +1,7 @@
 #include "graphics/opengl.h"
+#include "assets/asset_manager.h"
 #include "core/log.h"
+#include "graphics/shader_asset.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -93,6 +95,29 @@ void add_shader(program_t program, const char* shader_source, shader_type_t shad
     TRACE("Linked shader.");
     
     glDeleteShader(shader); // TODO: maybe have a seperate shader type so if a different program needs a shader then no need to recompile
+}
+
+void add_shader_asset(program_t program, asset_handle_t shader_handle) {
+    shader_asset_t* shader_asset = get_asset(shader_handle);
+
+    if (shader_asset == NULL) {
+        WARN("Failed to add shader to program.");
+        return;
+    }
+
+    glAttachShader(program, shader_asset->shader_id);
+    glLinkProgram(program); // TODO: figure out this works and its not a problem
+    
+    int32_t success;
+    char info_log[512];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(program, 512, NULL, info_log);
+        WARN("Shader linking failed: %s.", info_log);
+        return;
+    }
+
+    TRACE("Linked shader.");
 }
 
 vertex_buffer_t create_vertex_buffer(size_t size, void* data) {

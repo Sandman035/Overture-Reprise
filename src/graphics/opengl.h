@@ -1,6 +1,7 @@
 #ifndef OVERTURE_OPENGL
 #define OVERTURE_OPENGL
 
+#include "assets/asset_manager.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <glad/glad.h>
@@ -24,6 +25,7 @@ typedef enum {
 program_t create_program();
 void destroy_program(program_t program);
 void add_shader(program_t program, const char* shader_source, shader_type_t shader_type);
+void add_shader_asset(program_t program, asset_handle_t shader_handle);
 
 // NOTE: idk if ill keep this tho it does save a bit of work tho its hard to document
 // TODO: maybe add a way to check if uniform exists and only set it if it does

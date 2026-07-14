@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 
 #include <overture/math.h>
+#include <overture/assets.h>
 
 /// Shader program.
 typedef uint32_t program_t;
@@ -16,6 +17,15 @@ typedef enum {
     FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
 } shader_type_t;
 
+typedef struct {
+    shader_type_t type;
+    uint32_t shader_id;
+} shader_asset_t;
+
+typedef struct {
+    shader_type_t type;
+} glsl_shader_loader_args_t;
+
 /// Create a shader program and return it.
 program_t create_program();
 
@@ -24,6 +34,8 @@ void destroy_program(program_t program);
 
 /// Add a shader to the program from a array of characters containing the shader source.
 void add_shader(program_t program, const char* shader_source, shader_type_t shader_type);
+
+void add_shader_asset(program_t program, asset_handle_t shader_handle);
 
 /// Convoluted way of setting a uniform.
 #define SET_UNIFORM(type, program, name, ...) \

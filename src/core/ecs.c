@@ -103,7 +103,6 @@ signature_t create_sig(uint32_t count, ...) {
 uint64_t get_or_create_arch(signature_t sig) {
     for (uint64_t i = 0; i < arch_count; i++) {
         if (sig_equal(archetypes[i].signature, sig)) {
-            DEBUG("Got archetype: %ld.", i);
             return i;
         }
     }
@@ -116,8 +115,6 @@ uint64_t get_or_create_arch(signature_t sig) {
     archetypes[arch_count - 1].count = 0;
     archetypes[arch_count - 1].entity_ids = NULL;
     archetypes[arch_count - 1].columns = calloc(comp_num, sizeof(void*));
-
-    DEBUG("Created new archetype: %ld.", arch_count - 1);
 
     return arch_count - 1;
 }
@@ -168,7 +165,7 @@ void move_entity(entity_t ent, signature_t sig) {
     // allocate space for components
     for (int i = 0; i < comp_num; i++) {
         signature_t comp_sig = id_to_sig(i + 1);
-        if (contains_sig(sig, comp_sig)) {
+        if (contains_sig(sig, comp_sig) && comp_sizes[i] != 0) {
             new_arch->columns[i] = realloc(new_arch->columns[i], new_arch->count * comp_sizes[i]);
 
             if (new_arch->columns[i] == NULL) {

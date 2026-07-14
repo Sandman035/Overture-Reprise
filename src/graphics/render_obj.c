@@ -46,10 +46,7 @@ void create_object_renderer_framebuffers(object_renderer_context* context, uint3
     glGenTextures(1, &context->opaque_color_texture);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, context->opaque_color_texture);
 
-    // TODO: figure out optimal texture settings
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, width, height, GL_TRUE);
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, context->opaque_color_texture, 0);
 
@@ -64,20 +61,14 @@ void create_object_renderer_framebuffers(object_renderer_context* context, uint3
 
     TRACE("Created opaque pass framebuffer.");
 
-    // transparent pass
     glGenFramebuffers(1, &context->transparent_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, context->transparent_fbo);
 
     glGenTextures(1, &context->transparent_color_texture);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, context->transparent_color_texture);
 
-    // TODO: figure out optimal texture settings
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, width, height, GL_TRUE);
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-    
-    // attach it to currently bound framebuffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, context->transparent_color_texture, 0);
     
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {

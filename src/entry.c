@@ -9,12 +9,18 @@ int should_exit = 0;
 int main() {
     init_windowing();
 
+    run_systems_sequential(STARTUP);
+
     run_systems_sequential(SETUP);
     
     while (!should_exit) {
-        run_systems_parrallel(PRE_UPDATE);
-        run_systems_parrallel(UPDATE);
-        run_systems_parrallel(POST_UPDATE);
+        // TODO: wait until proper parrallelization implementation
+        //run_systems_parrallel(PRE_UPDATE);
+        //run_systems_parrallel(UPDATE);
+        //run_systems_parrallel(POST_UPDATE);
+        run_systems_sequential(PRE_UPDATE);
+        run_systems_sequential(UPDATE);
+        run_systems_sequential(POST_UPDATE);
 
         run_systems_sequential(PRE_RENDER);
         run_systems_sequential(RENDER);

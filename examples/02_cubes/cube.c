@@ -55,32 +55,18 @@ const uint32_t indices[] = {
     20, 21, 22, 22, 23, 20,
 };
 
-const char *vertex_shader_source ="#version 430 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "layout (location = 1) in vec3 aColor;\n"
-    "out vec3 ourColor;\n"
-    "uniform mat4 world;\n"
-    "uniform mat4 proj;\n"
-    "uniform mat4 view;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = proj * view * world * vec4(aPos, 1.0);\n"
-    "   ourColor = aColor;\n"
-    "}\0";
-
-const char *fragment_shader_source = "#version 430 core\n"
-    "out vec4 FragColor;\n"
-    "in vec3 ourColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(ourColor, 1.0);\n"
-    "}\n\0";
-
 void setup_cube() {
     entity_t window_ent = create_entity();
     window_t window;
     window.id = create_window();
     ADD_COMPONENT(window_t, window_ent, &window);
+
+    glsl_shader_loader_args_t args;
+    args.type = VERTEX_SHADER;
+    asset_handle_t vertex_shader = load_asset("assets/shaders/cube.vs", "overture:glsl_shader", &args);
+
+    args.type = FRAGMENT_SHADER;
+    asset_handle_t fragment_shader = load_asset("assets/shaders/cube.fs", "overture:glsl_shader", &args);
 
     for (int32_t x = -1; x <= 1; x++) {
         for (int32_t y = -1; y <= 1; y++) {
@@ -95,15 +81,15 @@ void setup_cube() {
                 add_index_buffer(&cube.vertex_buffer, sizeof(indices), (void*)indices);
 
                 cube.program = create_program();
-                add_shader(cube.program, vertex_shader_source, VERTEX_SHADER);
-                add_shader(cube.program, fragment_shader_source, FRAGMENT_SHADER);
+                add_shader_asset(cube.program, vertex_shader);
+                add_shader_asset(cube.program, fragment_shader);
 
                 cube.window_id = window.id;
 
                 z_pre_pass_t z_pre;
 
                 z_pre.program = create_program();
-                add_shader(z_pre.program, vertex_shader_source, VERTEX_SHADER);
+                add_shader_asset(z_pre.program, vertex_shader);
 
                 transform_t cube_tranform;
                 cube_tranform.scale = vec3(1, 1, 1);
