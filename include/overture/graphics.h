@@ -35,6 +35,7 @@ void destroy_program(program_t program);
 /// Add a shader to the program from a array of characters containing the shader source.
 void add_shader(program_t program, const char* shader_source, shader_type_t shader_type);
 
+/// Add a shader to the program from a previously loaded shader asset.
 void add_shader_asset(program_t program, asset_handle_t shader_handle);
 
 /// Convoluted way of setting a uniform.
@@ -46,7 +47,7 @@ typedef struct {
     uint32_t VAO;
     uint32_t VBO;
     uint32_t EBO;
-    uint32_t attrib_count;
+    uint32_t next_attrib;
     uint64_t indices_count;
 } vertex_buffer_t;
 
@@ -58,6 +59,9 @@ void destroy_vertex_buffer(vertex_buffer_t* vertex_buffer);
 
 /// Add an attribute to the vertex buffer.
 void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size_t stride, size_t offset);
+
+/// Add an attribute to the vertex buffer at a specific index.
+void instert_attrib(vertex_buffer_t* vertex_buffer, uint32_t index, uint32_t size, GLenum type, size_t stride, size_t offset);
 
 /// Add an index buffer to the vertex buffer.
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
@@ -77,5 +81,15 @@ typedef struct {
 
 /// Transparent material label component
 typedef struct {} transparent_material_t;
+
+typedef struct {
+    vec3_t pos;
+    vec3_t norm;
+    vec2_t tex;
+} vertex_t;
+
+typedef struct {
+    vertex_buffer_t vertex_buffer;
+} mesh_asset_t;
 
 #endif

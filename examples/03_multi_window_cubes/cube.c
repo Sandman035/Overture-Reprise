@@ -12,9 +12,9 @@ REGISTER_COMPONENT(cube_t);
 typedef struct {
     vec3_t pos;
     vec3_t color;
-} vertex_t;
+} vertex_custom_t;
 
-const vertex_t vertices[] = {
+const vertex_custom_t vertices[] = {
     {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
@@ -75,8 +75,8 @@ void setup_cube() {
         render_object_t cube;
  
         cube.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
-        add_attrib(&cube.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, pos));
-        add_attrib(&cube.vertex_buffer, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+        instert_attrib(&cube.vertex_buffer, 0, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, pos));
+        instert_attrib(&cube.vertex_buffer, 1, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, color));
         add_index_buffer(&cube.vertex_buffer, sizeof(indices), (void*)indices);
  
         cube.program = create_program();

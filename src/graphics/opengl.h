@@ -8,7 +8,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-
 void cleanup_opengl();
 
 void setup_gl_window();
@@ -29,7 +28,6 @@ void add_shader(program_t program, const char* shader_source, shader_type_t shad
 void add_shader_asset(program_t program, asset_handle_t shader_handle);
 
 // NOTE: idk if ill keep this tho it does save a bit of work tho its hard to document
-// TODO: maybe add a way to check if uniform exists and only set it if it does
 #define SET_UNIFORM(type, program, name, ...) \
     { \
         int32_t loc = glGetUniformLocation(program, name); \
@@ -44,13 +42,15 @@ typedef struct {
     uint32_t VAO;
     uint32_t VBO;
     uint32_t EBO;
-    uint32_t attrib_count;
+    uint32_t next_attrib;
     uint64_t indices_count;
 } vertex_buffer_t;
 
 vertex_buffer_t create_vertex_buffer(size_t size, void* data);
 void destroy_vertex_buffer(vertex_buffer_t* vertex_buffer);
 void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size_t stride, size_t offset);
+// maybe replace add_attrib with instert_attrib because its just better/more predictable
+void instert_attrib(vertex_buffer_t* vertex_buffer, uint32_t index, uint32_t size, GLenum type, size_t stride, size_t offset);
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 
 #endif
