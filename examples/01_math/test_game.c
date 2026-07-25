@@ -1,7 +1,9 @@
+#include "overture/core.h"
 #include <overture/overture.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 typedef struct {
@@ -17,6 +19,10 @@ typedef struct {
 } player_name_t;
 
 REGISTER_COMPONENT(player_name_t);
+
+typedef struct {} player_t;
+
+REGISTER_COMPONENT(player_t);
 
 void setup_game() {
     while(1) {
@@ -36,6 +42,8 @@ void setup_game() {
 
         add_score_t(player, &score);
 
+        ADD_COMPONENT_EMPTY(player_t, player);
+
         printf("Would you like to add a new player? [y/n]\n");
 
         char add_player;
@@ -48,6 +56,14 @@ void setup_game() {
         break;
     }
 
+    player_name_t player_name;
+    strcpy(player_name.name, "I have no score!!!");
+
+    entity_t player = create_entity();
+
+    add_player_name_t(player, &player_name);
+    ADD_COMPONENT_EMPTY(player_t, player);
+
     srand(time(NULL));
 }
 
@@ -56,7 +72,7 @@ REGISTER_SYSTEM(setup_game, SETUP);
 extern int should_exit;
 
 void update_game() {
-    entity_t* list = FILTER_ENTITIES(score_t, player_name_t);
+    entity_t* list = FILTER_ENTITIES(score_t, player_name_t, player_t);
 
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
         score_t* score = get_comp(list[i], GET_ID(score_t));
@@ -83,6 +99,14 @@ void update_game() {
             score->display = 0;
             should_exit = 1;
         }
+    }
+
+    list = FILTER_ENTITIES_EXCLUDING((player_name_t, player_t), (score_t));
+
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        player_name_t* name = get_comp(list[i], GET_ID(player_name_t));
+
+        printf("I AM NO SCORE: %s.\n", name->name);
     }
 
     free(list);

@@ -80,6 +80,11 @@ asset_handle_t load_asset(const char* path, const char* asset_type, void* args) 
         return 0;
     }
 
+    // TODO: check if asset with current path and loader has already been loaded
+    //       we could store a list of asset paths and handles in the loader and we could just simple loop
+    //       through it and find any matches, then we'd just return the handle
+    //       idk how I forgot to implement this earlier, it's pretty much the whole point of this system
+
     void* data;
     size_t size;
     if (!loader->loader.load(path, &data, &size, args)) {

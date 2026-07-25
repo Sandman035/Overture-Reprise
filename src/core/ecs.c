@@ -343,6 +343,51 @@ entity_t* filter_entities(signature_t filter) {
     return list;
 }
 
+entity_t* filter_entities_excluding(signature_t include, signature_t exclude) {
+    uint64_t len = 0;
+
+    for (uint64_t i = 0; i < arch_count; i++) {
+        if (contains_sig(archetypes[i].signature, include) && !contains_sig(archetypes[i].signature, exclude)) {
+            len += archetypes[i].count;
+        }
+    }
+
+    entity_t* list = malloc((len + 1) * sizeof(entity_t));
+
+    uint64_t idx = 0;
+    for (uint64_t i = 0; i < arch_count; i++) {
+        if (contains_sig(archetypes[i].signature, include) && !contains_sig(archetypes[i].signature, exclude)) {
+            memcpy(list + idx, archetypes[i].entity_ids, archetypes[i].count * sizeof(entity_t));
+            idx += archetypes[i].count;
+        }
+    }
+
+    char inc[100] = "";
+    uint64_t n = sig_size();
+    while (n--) {
+        if (n == sig_size() - 1) {
+            sprintf(inc,"%s%8.8B", inc, include[n]);
+            continue;
+        }
+        sprintf(inc,"%s %8.8B", inc, include[n]);
+    }
+
+    char exc[100] = "";
+    n = sig_size();
+    while (n--) {
+        if (n == sig_size() - 1) {
+            sprintf(exc,"%s%8.8B", exc, exclude[n]);
+            continue;
+        }
+        sprintf(exc,"%s %8.8B", exc, exclude[n]);
+    }
+
+    TRACE("Filtered %ld entities with signature %s and excluding signature %s.", len, inc, exc);
+
+    list[len] = ENTITY_INVALID;
+    return list;
+}
+
 void cleanup_ecs() {
     // TODO: Free all memory
 }

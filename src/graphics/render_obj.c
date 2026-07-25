@@ -167,6 +167,46 @@ void render_obj() {
         glDepthMask(GL_FALSE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        glUseProgram(obj->program);
+
+        SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
+        SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &window->context.view.m00);
+        SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &window->context.proj.m00);
+
+        glBindVertexArray(obj->vertex_buffer.VAO);
+        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
+    }
+
+    free(list);
+
+    list = FILTER_ENTITIES_EXCLUDING((render_object_t), (z_pre_pass_t));
+
+    TRACE("Render non-z_pre_pass objects.");
+
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+
+        window_data_t* window = get_window(obj->window_id);
+
+        if (window == NULL) {
+            WARN("Window %ld doesn't exist skipping render obj %p.", obj->window_id, obj);
+            continue;
+        }
+
+        glfwMakeContextCurrent(window->window); // temp
+
+        glBindFramebuffer(GL_FRAMEBUFFER, window->context.opaque_fbo);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         glUseProgram(obj->program);
 
         SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
@@ -198,6 +238,10 @@ void render_obj() {
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, window->context.transparent_fbo);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
         glUseProgram(obj->program);
 

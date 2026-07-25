@@ -27,6 +27,7 @@ component_t get_comp(entity_t ent, uint64_t comp_id);
 void remove_comp(entity_t ent, uint64_t comp_id);
 
 entity_t* filter_entities(signature_t filter);
+entity_t* filter_entities_excluding(signature_t include, signature_t exclude);
 
 void cleanup_ecs();
 
@@ -34,6 +35,16 @@ void cleanup_ecs();
     signature_t filter = CREATE_SIG(__VA_ARGS__); \
     entity_t* list = filter_entities(filter); \
     free(filter); \
+    list; \
+})
+
+// Takes the signatures as tuples
+#define FILTER_ENTITIES_EXCLUDING(include, exclude) ({ \
+    signature_t include_filter = CREATE_SIG include; \
+    signature_t exclude_filter = CREATE_SIG exclude; \
+    entity_t* list = filter_entities_excluding(include_filter, exclude_filter); \
+    free(include_filter); \
+    free(exclude_filter); \
     list; \
 })
 

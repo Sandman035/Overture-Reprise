@@ -22,6 +22,7 @@ uint64_t register_new_comp(size_t size);
 signature_t id_to_sig(uint64_t id);
 signature_t create_sig(uint32_t n, ...);
 entity_t* filter_entities(signature_t filter);
+entity_t* filter_entities_excluding(signature_t include, signature_t exclude);
 
 #define X_ID(X) X ## _id
 #define REGISTER_ID(X) \

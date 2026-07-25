@@ -93,6 +93,16 @@ void cleanup_ecs();
     list; \
 })
 
+// Takes the signatures as tuples
+#define FILTER_ENTITIES_EXCLUDING(include, exclude) ({ \
+    signature_t include_filter = CREATE_SIG include; \
+    signature_t exclude_filter = CREATE_SIG exclude; \
+    entity_t* list = filter_entities_excluding(include_filter, exclude_filter); \
+    free(include_filter); \
+    free(exclude_filter); \
+    list; \
+})
+
 #define GET_ID(component_struct) ({extern uint64_t component_struct ## _id; component_struct ## _id;})
 #define GET_SIG(component_struct) id_to_sig(GET_ID(component_struct))
 
