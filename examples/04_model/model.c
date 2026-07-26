@@ -16,62 +16,35 @@ void setup() {
 
     args.type = FRAGMENT_SHADER;
     asset_handle_t fragment_shader = load_asset("assets/shaders/diffuse.fs", "overture:glsl_shader", &args);
+    asset_handle_t mesh_handle = load_asset("assets/models/bunny.obj", "temp:tinyobj", &args);
 
-    {
-        entity_t model_ent = create_entity();
+    entity_t model_ent = create_entity();
 
-        render_object_t model;
+    render_object_t model;
 
-        // TODO: move object renderet to use asset handles instead of raw data
-        asset_handle_t mesh_handle = load_asset("assets/models/bunny.obj", "temp:tinyobj", &args);
-        mesh_asset_t* mesh = get_asset(mesh_handle);
-        model.vertex_buffer = mesh->vertex_buffer;
+    // TODO: move object renderet to use asset handles instead of raw data
+    mesh_asset_t* mesh = get_asset(mesh_handle);
+    model.vertex_buffer = mesh->vertex_buffer;
 
-        model.program = create_program();
-        add_shader_asset(model.program, vertex_shader);
-        add_shader_asset(model.program, fragment_shader);
+    model.program = create_program();
+    add_shader_asset(model.program, vertex_shader);
+    add_shader_asset(model.program, fragment_shader);
 
-        model.window_id = window.id;
+    model.window_id = window.id;
 
-        z_pre_pass_t z_pre;
+    z_pre_pass_t z_pre;
 
-        z_pre.program = create_program();
-        add_shader_asset(z_pre.program, vertex_shader);
+    z_pre.program = create_program();
+    add_shader_asset(z_pre.program, vertex_shader);
 
-        transform_t transform;
-        transform.scale = vec3(1, 1, 1);
-        transform.pos = vec3(0, 0, 0);
-        transform.rot = vec3(0, 0, 0);
+    transform_t transform;
+    transform.scale = vec3(1, 1, 1);
+    transform.pos = vec3(0, 0, 0);
+    transform.rot = vec3(0, 0, 0);
 
-        ADD_COMPONENT(render_object_t, model_ent, &model);
-        ADD_COMPONENT(z_pre_pass_t, model_ent, &z_pre);
-        ADD_COMPONENT(transform_t, model_ent, &transform);
-    }
-
-    {
-        entity_t model_ent = create_entity();
-
-        render_object_t model;
-
-        // TODO: move object renderet to use asset handles instead of raw data
-        asset_handle_t mesh_handle = load_asset("assets/models/bunny.obj", "temp:tinyobj", &args);
-        mesh_asset_t* mesh = get_asset(mesh_handle);
-        model.vertex_buffer = mesh->vertex_buffer;
-
-        model.program = create_program();
-        add_shader_asset(model.program, vertex_shader);
-        add_shader_asset(model.program, fragment_shader);
-
-        model.window_id = window.id;
-
-        transform_t transform;
-        transform.scale = vec3(1, 1, 1);
-        transform.pos = vec3(0.1, 0, 0);
-        transform.rot = vec3(0, 0, 0);
-
-        ADD_COMPONENT(render_object_t, model_ent, &model);
-        ADD_COMPONENT(transform_t, model_ent, &transform);
-    }
+    ADD_COMPONENT(render_object_t, model_ent, &model);
+    ADD_COMPONENT(z_pre_pass_t, model_ent, &z_pre);
+    ADD_COMPONENT(transform_t, model_ent, &transform);
 
     entity_t camera_ent = create_entity();
     camera_t camera;

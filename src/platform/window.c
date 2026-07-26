@@ -157,6 +157,19 @@ void start_window_render() {
 
 REGISTER_SYSTEM(start_window_render, PRE_RENDER);
 
+void render() {
+    window_node_t* temp = window_list_head;
+    while (temp != NULL) {
+        glfwMakeContextCurrent(temp->window.window);
+
+        render_queues(&temp->window.context);
+
+        temp = temp->next;
+    }
+}
+
+REGISTER_SYSTEM(render, RENDER);
+
 void display_to_windows() {
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
@@ -177,6 +190,8 @@ void display_to_windows() {
         );
 
         glfwSwapBuffers(temp->window.window);
+
+        clear_render_queues(&temp->window.context);
 
         temp = temp->next;
     }

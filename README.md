@@ -2,7 +2,7 @@
 
 Overture is a game engine written in c that exists I guess...
 
-This is the third time I try to make this engine, but unlike previous atempts I now finally know what I'm doing... kinda. Overture is not trying to be the best game engine out there, and in fact will have many stupid features because I learned something cool and wanted to use it in a stupid way. I took inspiration from the gldsrc and source engines although that isn't really apparent, except when looking at the jank, then their identical. I'm trying to make this old school ish but also new ish... simply said its a mess. I'm just doing this for fun.
+This is the third time I try to make this engine, but unlike previous atempts I now finally know what I'm doing... kinda. Overture is not trying to be the best game engine out there, and in fact will have many stupid features because I learned something cool and wanted to use it in a stupid way. I took inspiration from the gldsrc and source engines as well as more modern egines like bevy. I'm trying to make this old school ish but also new ish... simply said its a mess. I'm just doing this for fun.
 
 ## Features & Guidelines
 
