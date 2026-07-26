@@ -209,6 +209,7 @@ void add_comp(entity_t ent, uint64_t comp_id, void* data) {
         if (contains_sig(old_sig, comp_sig)) {
             TRACE("Entity %ld already contains component %ld", ent, comp_id);
             free(comp_sig);
+            free(sig);
             return;
         }
         free(comp_sig);
@@ -364,7 +365,7 @@ entity_t* filter_entities_excluding(signature_t include, signature_t exclude) {
 
     uint64_t idx = 0;
     for (uint64_t i = 0; i < arch_count; i++) {
-        if (contains_sig(archetypes[i].signature, include) && !contains_sig(archetypes[i].signature, exclude)) {
+        if (contains_sig(archetypes[i].signature, include) && excludes_sig(archetypes[i].signature, exclude)) {
             memcpy(list + idx, archetypes[i].entity_ids, archetypes[i].count * sizeof(entity_t));
             idx += archetypes[i].count;
         }
