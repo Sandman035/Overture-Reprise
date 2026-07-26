@@ -115,7 +115,7 @@ void sort_render_objs() {
 
     TRACE("Sorting into Opaque Z-Pre-Pass.");
 
-    entity_t* list = FILTER_ENTITIES(render_object_t, z_pre_pass_t);
+    entity_t* list = FILTER_ENTITIES_EXCLUDING((render_object_t, z_pre_pass_t), (transparent_material_t));
 
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
@@ -157,7 +157,7 @@ void sort_render_objs() {
 
     TRACE("Sorting into Opaque No Z.");
 
-    list = FILTER_ENTITIES_EXCLUDING((render_object_t), (z_pre_pass_t));
+    list = FILTER_ENTITIES_EXCLUDING((render_object_t), (z_pre_pass_t, transparent_material_t));
 
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
