@@ -16,6 +16,7 @@ void setup() {
 
     args.type = FRAGMENT_SHADER;
     asset_handle_t fragment_shader = load_asset("assets/shaders/diffuse.fs", "overture:glsl_shader", &args);
+
     asset_handle_t mesh_handle = load_asset("assets/models/bunny.obj", "temp:tinyobj", &args);
 
     entity_t model_ent = create_entity();

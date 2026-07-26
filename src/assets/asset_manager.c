@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define ASSET_LOADER_TABLE_SIZE 64
+#define PATH_HASH_TABLE_SIZE 256
 
 static uint64_t hash_asset_type(const char* asset_type) {
     // FNV-1a -- seems to be correct from minimal testing
@@ -17,9 +18,17 @@ static uint64_t hash_asset_type(const char* asset_type) {
     return hash;
 }
 
+typedef struct path_asset_hash {
+    uint64_t path_key;
+    asset_handle_t handle;
+    struct path_asset_hash* next;
+} path_asset_hash;
+
+
 typedef struct loader_node_t {
     uint64_t key;
     asset_loader_t loader;
+    path_asset_hash* path_hash_table[PATH_HASH_TABLE_SIZE];
     struct loader_node_t* next;
 } loader_node_t;
 
@@ -34,6 +43,10 @@ void register_asset_loader(const char* asset_type, asset_loader_t loader) {
     node->key = hash;
     node->loader = loader;
     node->next = NULL;
+
+    for (size_t i = 0; i < PATH_HASH_TABLE_SIZE; i++) {
+        node->path_hash_table[i] = NULL;
+    }
 
     if (asset_loader_table[idx] == NULL) {
         asset_loader_table[idx] = node;
@@ -80,19 +93,45 @@ asset_handle_t load_asset(const char* path, const char* asset_type, void* args) 
         return 0;
     }
 
-    // TODO: check if asset with current path and loader has already been loaded
-    //       we could store a list of asset paths and handles in the loader and we could just simple loop
-    //       through it and find any matches, then we'd just return the handle
-    //       idk how I forgot to implement this earlier, it's pretty much the whole point of this system
-
     void* data;
     size_t size;
     if (!loader->loader.load(path, &data, &size, args)) {
         WARN("Failed to load asset: %s.", path);
+        free(data);
         return 0;
     }
 
+    uint64_t hash = hash_asset_type(path);
+    size_t path_idx = hash % PATH_HASH_TABLE_SIZE;
+
+    path_asset_hash* item = malloc(sizeof(path_asset_hash));
+    item->next = NULL;
+    item->path_key = hash;
+
+    if (loader->path_hash_table[path_idx] == NULL) {
+        loader->path_hash_table[path_idx] = item;
+    } else {
+        path_asset_hash* temp = loader->path_hash_table[path_idx];
+        while (temp != NULL) {
+            if (temp->path_key == hash) {
+                free(item);
+                free(data);
+                return temp->handle;
+            }
+
+            if (temp->next == NULL) {
+                break;
+            }
+
+            temp = temp->next;
+        }
+
+        temp->next = item;
+    }
+
     asset_handle_t handle = add_asset(data, size, asset_type);
+
+    item->handle = handle;
 
     free(data); // NOTE: maybe just store the pointer in add_asset, would require two versions of the function tho
     data = NULL;
