@@ -49,7 +49,7 @@ typedef struct {
 vertex_buffer_t create_vertex_buffer(size_t size, void* data);
 void destroy_vertex_buffer(vertex_buffer_t* vertex_buffer);
 void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size_t stride, size_t offset);
-// maybe replace add_attrib with instert_attrib because its just better/more predictable
+// TODO: maybe replace add_attrib with instert_attrib because its just better/more predictable
 void instert_attrib(vertex_buffer_t* vertex_buffer, uint32_t index, uint32_t size, GLenum type, size_t stride, size_t offset);
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 

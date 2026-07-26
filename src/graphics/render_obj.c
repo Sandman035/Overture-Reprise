@@ -1,4 +1,6 @@
 #include "render_obj.h"
+#include "assets/asset_manager.h"
+#include "graphics/mesh_asset.h"
 #include "graphics/opengl.h"
 #include "math/matrix.h"
 #include "platform/window.h"
@@ -111,9 +113,10 @@ void clear_object_rederer_framebuffers(object_renderer_context* context) {
 }
 
 void sort_render_objs() {
-    TRACE("Sorting render objects to windows");
+    // Potentially this sorting could be used to create an auto instancer, as in every render obj that shares the same shaders and buffers
+    // would be combined into a singular draw call via instancing
 
-    TRACE("Sorting into Opaque Z-Pre-Pass.");
+    TRACE("Sorting render objects to windows");
 
     entity_t* list = FILTER_ENTITIES_EXCLUDING((render_object_t, z_pre_pass_t), (transparent_material_t));
 
@@ -155,8 +158,6 @@ void sort_render_objs() {
 
     free(list);
 
-    TRACE("Sorting into Opaque No Z.");
-
     list = FILTER_ENTITIES_EXCLUDING((render_object_t), (z_pre_pass_t, transparent_material_t));
 
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
@@ -194,8 +195,6 @@ void sort_render_objs() {
     }
 
     free(list);
-
-    TRACE("Sorting into Transparent.");
 
     list = FILTER_ENTITIES(render_object_t, transparent_material_t);
 
@@ -273,6 +272,12 @@ void render_queues(object_renderer_context* context) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
         z_pre_pass_t* z_pre_pass = get_comp(list[i], GET_ID(z_pre_pass_t));
 
+        mesh_asset_t* mesh = get_asset(obj->mesh);
+
+        if (mesh == NULL) {
+            continue;
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
 
         glEnable(GL_DEPTH_TEST);
@@ -287,8 +292,8 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, z_pre_pass->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, z_pre_pass->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
-        glBindVertexArray(obj->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
+        glBindVertexArray(mesh->vertex_buffer.VAO);
+        glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
     }
 
     /***************/
@@ -300,6 +305,12 @@ void render_queues(object_renderer_context* context) {
 
     for (uint64_t i = 0; i < context->opaque_z_pre.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+
+        mesh_asset_t* mesh = get_asset(obj->mesh);
+
+        if (mesh == NULL) {
+            continue;
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
         glEnable(GL_DEPTH_TEST);
@@ -316,8 +327,8 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
-        glBindVertexArray(obj->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
+        glBindVertexArray(mesh->vertex_buffer.VAO);
+        glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
     }
 
     TRACE("Render non-z_pre_pass objects.");
@@ -326,6 +337,12 @@ void render_queues(object_renderer_context* context) {
 
     for (uint64_t i = 0; i < context->opaque_no_z.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+
+        mesh_asset_t* mesh = get_asset(obj->mesh);
+
+        if (mesh == NULL) {
+            continue;
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
         glEnable(GL_DEPTH_TEST);
@@ -342,8 +359,8 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
-        glBindVertexArray(obj->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(mesh->vertex_buffer.VAO);
+        glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);
     }
 
     /********************/
@@ -357,6 +374,12 @@ void render_queues(object_renderer_context* context) {
     for (uint64_t i = 0; i < context->transparent.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
 
+        mesh_asset_t* mesh = get_asset(obj->mesh);
+
+        if (!mesh) {
+            continue;
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, context->transparent_fbo);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -369,8 +392,8 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
-        glBindVertexArray(obj->vertex_buffer.VAO);
-        glDrawElements(GL_TRIANGLES, obj->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(mesh->vertex_buffer.VAO);
+        glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);
     }
 
     // TODO: actually implement a proper OIT renderpass

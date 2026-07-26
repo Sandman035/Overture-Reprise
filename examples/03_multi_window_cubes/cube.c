@@ -74,10 +74,14 @@ void setup_cube() {
  
         render_object_t cube;
  
-        cube.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
-        instert_attrib(&cube.vertex_buffer, 0, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, pos));
-        instert_attrib(&cube.vertex_buffer, 1, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, color));
-        add_index_buffer(&cube.vertex_buffer, sizeof(indices), (void*)indices);
+        mesh_asset_t mesh;
+
+        mesh.vertex_buffer = create_vertex_buffer(sizeof(vertices), (void*)vertices);
+        instert_attrib(&mesh.vertex_buffer, 0, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, pos));
+        instert_attrib(&mesh.vertex_buffer, 1, 3, GL_FLOAT, sizeof(vertex_custom_t), offsetof(vertex_custom_t, color));
+        add_index_buffer(&mesh.vertex_buffer, sizeof(indices), (void*)indices);
+
+        cube.mesh = add_asset(&mesh, sizeof(mesh_asset_t), "mesh"); // the type is currently not used
  
         cube.program = create_program();
         add_shader_asset(cube.program, vertex_shader);

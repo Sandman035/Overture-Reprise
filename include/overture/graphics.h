@@ -70,7 +70,7 @@ void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 typedef struct {
     uint64_t window_id;
     program_t program;
-    vertex_buffer_t vertex_buffer;
+    asset_handle_t mesh;
     mat4_t world_transform;
 } render_object_t;
 

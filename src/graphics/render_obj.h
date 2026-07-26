@@ -1,6 +1,7 @@
 #ifndef OVERTURE_RENDER_OBJ
 #define OVERTURE_RENDER_OBJ
 
+#include "assets/asset_manager.h"
 #include "core/ecs.h"
 #include "graphics/opengl.h"
 #include "math/types.h"
@@ -44,7 +45,7 @@ void render_queues(object_renderer_context* context);
 typedef struct {
     uint64_t window_id;
     program_t program;
-    vertex_buffer_t vertex_buffer;
+    asset_handle_t mesh;
     mat4_t world_transform;
 } render_object_t;
 

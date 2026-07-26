@@ -22,9 +22,7 @@ void setup() {
 
     render_object_t model;
 
-    // TODO: move object renderet to use asset handles instead of raw data
-    mesh_asset_t* mesh = get_asset(mesh_handle);
-    model.vertex_buffer = mesh->vertex_buffer;
+    model.mesh = mesh_handle;
 
     model.program = create_program();
     add_shader_asset(model.program, vertex_shader);
