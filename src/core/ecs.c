@@ -58,6 +58,14 @@ static int contains_sig(const signature_t s1, const signature_t s2) {
     return 1;
 }
 
+static int excludes_sig(const signature_t s1, const signature_t s2) {
+    uint64_t n = sig_size();
+    while (n--) {
+        if (s1[n] & s2[n]) return 0;
+    }
+    return 1;
+}
+
 static int sig_equal(const signature_t s1, const signature_t s2) {
     return memcmp(s1, s2, sig_size()) == 0;
 }
@@ -347,7 +355,7 @@ entity_t* filter_entities_excluding(signature_t include, signature_t exclude) {
     uint64_t len = 0;
 
     for (uint64_t i = 0; i < arch_count; i++) {
-        if (contains_sig(archetypes[i].signature, include) && !contains_sig(archetypes[i].signature, exclude)) {
+        if (contains_sig(archetypes[i].signature, include) && excludes_sig(archetypes[i].signature, exclude)) {
             len += archetypes[i].count;
         }
     }
