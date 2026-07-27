@@ -58,6 +58,6 @@ typedef struct {
     uint64_t texture_handle_arb;
 } texture_t;
 
-texture_t create_texture(int32_t width, int32_t height, const void* data);
+texture_t create_texture(int32_t width, int32_t height, const void* data, GLenum internal_format, GLenum format);
 
 #endif

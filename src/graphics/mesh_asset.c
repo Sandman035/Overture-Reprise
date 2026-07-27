@@ -22,29 +22,37 @@ uint32_t load_tinyobj(const char* path, void** data_out, size_t* size, void* arg
         return 0;
     }
 
-    // only get the first mesh for now
-    const tobj_mesh_f *mesh = &scene.shapes[0].mesh;
+    size_t vertex_count = 0;
+    for (size_t s = 0; s < scene.num_shapes; s++) {
+        const tobj_mesh_f *mesh = &scene.shapes[s].mesh;
 
-    size_t vertex_count = mesh->num_indices;
+        vertex_count += mesh->num_indices;
+    }
 
     vertex_t* vertices = malloc(vertex_count * sizeof(vertex_t));
     uint32_t* indices = malloc(vertex_count * sizeof(uint32_t));
 
-    for (size_t i = 0; i < vertex_count; i++) {
-        indices[i] = i; // for now
+    size_t index = 0;
+    for (size_t s = 0; s < scene.num_shapes; s++) {
+        const tobj_mesh_f *mesh = &scene.shapes[s].mesh;
 
-        tobj_index idx = mesh->indices[i];
+        for (size_t i = 0; i < mesh->num_indices; i++) {
+            indices[index] = index; // for now
 
-        vertices[i].pos.x = scene.attrib.vertices.ptr[3 * idx.vertex_index + 0];
-        vertices[i].pos.y = scene.attrib.vertices.ptr[3 * idx.vertex_index + 1];
-        vertices[i].pos.z = scene.attrib.vertices.ptr[3 * idx.vertex_index + 2];
+            tobj_index idx = mesh->indices[i];
 
-        vertices[i].norm.x = scene.attrib.normals.ptr[3 * idx.normal_index + 0];
-        vertices[i].norm.y = scene.attrib.normals.ptr[3 * idx.normal_index + 1];
-        vertices[i].norm.z = scene.attrib.normals.ptr[3 * idx.normal_index + 2];
+            vertices[index].pos.x = scene.attrib.vertices.ptr[3 * idx.vertex_index + 0];
+            vertices[index].pos.y = scene.attrib.vertices.ptr[3 * idx.vertex_index + 1];
+            vertices[index].pos.z = scene.attrib.vertices.ptr[3 * idx.vertex_index + 2];
 
-        vertices[i].tex.u = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 0];
-        vertices[i].tex.v = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 1];
+            vertices[index].norm.x = scene.attrib.normals.ptr[3 * idx.normal_index + 0];
+            vertices[index].norm.y = scene.attrib.normals.ptr[3 * idx.normal_index + 1];
+            vertices[index].norm.z = scene.attrib.normals.ptr[3 * idx.normal_index + 2];
+
+            vertices[index].tex.u = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 0];
+            vertices[index].tex.v = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 1];
+            index++;
+        }
     }
 
     tobj_scene_free_f(&scene);

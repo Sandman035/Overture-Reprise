@@ -16,7 +16,7 @@ uint32_t load_stb_image(const char* path, void** data_out, size_t* size, void* a
     int32_t width, height, nrChannels;
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
-    if (!data) {
+    if (data == NULL) {
         WARN("Could not load texture: %s", path);
         return 0;
     }
@@ -24,7 +24,36 @@ uint32_t load_stb_image(const char* path, void** data_out, size_t* size, void* a
     *data_out = malloc(sizeof(texture_asset_t));
     texture_asset_t* texture = *data_out;
 
-    texture->texture = create_texture(width, height, data);
+    GLenum format;
+    GLenum internal_format;
+
+    switch (nrChannels) {
+        case 1:
+            format = GL_RED;
+            internal_format = GL_R8;
+            break;
+
+        case 2:
+            format = GL_RG;
+            internal_format = GL_RG8;
+            break;
+
+        case 3:
+            format = GL_RGB;
+            internal_format = GL_RGB8;
+            break;
+
+        case 4:
+            format = GL_RGBA;
+            internal_format = GL_RGBA8;
+            break;
+
+        default:
+            WARN("Texture format not supported.");
+            return 0;
+    }
+
+    texture->texture = create_texture(width, height, data, internal_format, format);
 
     stbi_image_free(data);
 

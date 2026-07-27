@@ -176,7 +176,7 @@ void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data) {
     vertex_buffer->indices_count = size / sizeof(uint32_t);
 }
 
-texture_t create_texture(int32_t width, int32_t height, const void* data) {
+texture_t create_texture(int32_t width, int32_t height, const void* data, GLenum internal_format, GLenum format) {
     texture_t texture;
 
     glGenTextures(1, &texture.texture);
@@ -188,7 +188,7 @@ texture_t create_texture(int32_t width, int32_t height, const void* data) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // TODO: different format handling
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     texture.texture_handle_arb = glGetTextureHandleARB(texture.texture);

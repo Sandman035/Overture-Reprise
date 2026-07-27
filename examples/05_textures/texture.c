@@ -20,10 +20,10 @@ void setup() {
     args.type = FRAGMENT_SHADER;
     asset_handle_t fragment_shader = load_asset("assets/shaders/texture.fs", "overture:glsl_shader", &args);
 
-    asset_handle_t mesh_handle = load_asset("assets/models/bunny.obj", "temp:tinyobj", NULL);
+    asset_handle_t mesh_handle = load_asset("assets/models/backpack.obj", "temp:tinyobj", NULL);
 
-    asset_handle_t texture1 = load_asset("assets/textures/container.jpg", "overture:stb_image", NULL);
-    asset_handle_t texture2 = load_asset("assets/textures/awesomeface.jpg", "overture:stb_image", NULL);
+    asset_handle_t texture1 = load_asset("assets/textures/diffuse.jpg", "overture:stb_image", NULL);
+    asset_handle_t texture2 = load_asset("assets/textures/ao.jpg", "overture:stb_image", NULL);
 
     entity_t model_ent = create_entity();
 
@@ -54,7 +54,7 @@ void setup() {
     textures.count = 2;
     textures.names = malloc(2 * sizeof(char[30]));
     strcpy(textures.names[0], "diffuse");
-    strcpy(textures.names[1], "face");
+    strcpy(textures.names[1], "ao");
     textures.textures = malloc(2 * sizeof(asset_handle_t));
     textures.textures[0] = texture1;
     textures.textures[1] = texture2;
@@ -74,7 +74,7 @@ void setup() {
 
     transform_t camera_transform;
     camera_transform.scale = vec3(1, 1, 1);
-    camera_transform.pos = vec3(0, 0.1, 0.5);
+    camera_transform.pos = vec3(0, 0, 10);
     camera_transform.rot = vec3(0, 0, 0);
 
     ADD_COMPONENT(camera_t, camera_ent, &camera);
@@ -89,7 +89,7 @@ void update_camera() {
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
         transform_t* transform = get_comp(list[i], GET_ID(transform_t));
 
-        transform->pos = vec3(0.5 * sinf(glfwGetTime()), 0.1, 0.5 * cosf(glfwGetTime()));
+        transform->pos = vec3(10 * sinf(glfwGetTime()), 0, 10 * cosf(glfwGetTime()));
 
         transform->rot = vec3(0, glfwGetTime(), 0);
     }

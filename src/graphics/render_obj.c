@@ -335,7 +335,6 @@ void render_queues(object_renderer_context* context) {
             for (uint32_t i = 0; i < textures->count; i++) {
                 texture_asset_t* texture = get_asset(textures->textures[i]);
                 if (texture != NULL) {
-                    DEBUG("%s, %ld", textures->names[i], textures->textures[i]);
                     SET_UNIFORM(Handleui64ARB, obj->program, textures->names[i], texture->texture.texture_handle_arb);
                 }
             }
