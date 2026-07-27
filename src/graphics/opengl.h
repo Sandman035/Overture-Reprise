@@ -53,4 +53,11 @@ void add_attrib(vertex_buffer_t* vertex_buffer, uint32_t size, GLenum type, size
 void instert_attrib(vertex_buffer_t* vertex_buffer, uint32_t index, uint32_t size, GLenum type, size_t stride, size_t offset);
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 
+typedef struct {
+    uint32_t texture;
+    uint64_t texture_handle_arb;
+} texture_t;
+
+texture_t create_texture(int32_t width, int32_t height, const void* data);
+
 #endif

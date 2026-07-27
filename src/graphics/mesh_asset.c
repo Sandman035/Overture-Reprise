@@ -43,8 +43,8 @@ uint32_t load_tinyobj(const char* path, void** data_out, size_t* size, void* arg
         vertices[i].norm.y = scene.attrib.normals.ptr[3 * idx.normal_index + 1];
         vertices[i].norm.z = scene.attrib.normals.ptr[3 * idx.normal_index + 2];
 
-        vertices[i].tex.u = scene.attrib.texcoords.ptr[3 * idx.texcoord_index + 0];
-        vertices[i].tex.v = scene.attrib.texcoords.ptr[3 * idx.texcoord_index + 1];
+        vertices[i].tex.u = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 0];
+        vertices[i].tex.v = scene.attrib.texcoords.ptr[2 * idx.texcoord_index + 1];
     }
 
     tobj_scene_free_f(&scene);

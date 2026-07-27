@@ -10,6 +10,11 @@
 uint32_t load_glsl(const char* path, void** data_out, size_t* size, void* args) {
     glsl_shader_loader_args_t* loader_args = args;
 
+    if (args == NULL) {
+        WARN("No arguments provided, unaible to load shader.");
+        return 0;
+    }
+
     size_t file_size;
     const char* shader_source = read_file(path, &file_size);
 

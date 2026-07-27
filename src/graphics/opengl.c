@@ -176,5 +176,30 @@ void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data) {
     vertex_buffer->indices_count = size / sizeof(uint32_t);
 }
 
+texture_t create_texture(int32_t width, int32_t height, const void* data) {
+    texture_t texture;
+
+    glGenTextures(1, &texture.texture);
+    glBindTexture(GL_TEXTURE_2D, texture.texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // TODO: different format handling
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    texture.texture_handle_arb = glGetTextureHandleARB(texture.texture);
+
+    // TODO: handle texture arb handle error
+
+    // NOTE: idk if I should do this, maybe I shouldn't, but its temp for now
+    glMakeTextureHandleResidentARB(texture.texture_handle_arb);
+
+    return texture;
+}
+
 void cleanup_opengl() {
 }

@@ -2,6 +2,7 @@
 #include "assets/asset_manager.h"
 #include "graphics/mesh_asset.h"
 #include "graphics/opengl.h"
+#include "graphics/texture_asset.h"
 #include "math/matrix.h"
 #include "platform/window.h"
 #include "core/ecs.h"
@@ -10,11 +11,13 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 REGISTER_COMPONENT(render_object_t);
 REGISTER_COMPONENT(z_pre_pass_t);
 REGISTER_COMPONENT(transparent_material_t);
+REGISTER_COMPONENT(textures_t);
 
 object_renderer_context create_object_renderer_context(uint32_t width, uint32_t height) {
     object_renderer_context context;
@@ -305,6 +308,7 @@ void render_queues(object_renderer_context* context) {
 
     for (uint64_t i = 0; i < context->opaque_z_pre.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+        textures_t* textures = get_comp(list[i], GET_ID(textures_t));
 
         mesh_asset_t* mesh = get_asset(obj->mesh);
 
@@ -327,6 +331,16 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
+        if (textures != NULL) {
+            for (uint32_t i = 0; i < textures->count; i++) {
+                texture_asset_t* texture = get_asset(textures->textures[i]);
+                if (texture != NULL) {
+                    DEBUG("%s, %ld", textures->names[i], textures->textures[i]);
+                    SET_UNIFORM(Handleui64ARB, obj->program, textures->names[i], texture->texture.texture_handle_arb);
+                }
+            }
+        }
+
         glBindVertexArray(mesh->vertex_buffer.VAO);
         glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0); // the last zero might be a problem it should be a pointer somewhere
     }
@@ -337,6 +351,7 @@ void render_queues(object_renderer_context* context) {
 
     for (uint64_t i = 0; i < context->opaque_no_z.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+        textures_t* textures = get_comp(list[i], GET_ID(textures_t));
 
         mesh_asset_t* mesh = get_asset(obj->mesh);
 
@@ -359,6 +374,15 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
 
+        if (textures != NULL) {
+            for (uint32_t i = 0; i < textures->count; i++) {
+                texture_asset_t* texture = get_asset(textures->textures[i]);
+                if (texture != NULL) {
+                    SET_UNIFORM(Handleui64ARB, obj->program, textures->names[i], texture->texture.texture_handle_arb);
+                }
+            }
+        }
+
         glBindVertexArray(mesh->vertex_buffer.VAO);
         glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);
     }
@@ -373,6 +397,7 @@ void render_queues(object_renderer_context* context) {
 
     for (uint64_t i = 0; i < context->transparent.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
+        textures_t* textures = get_comp(list[i], GET_ID(textures_t));
 
         mesh_asset_t* mesh = get_asset(obj->mesh);
 
@@ -391,6 +416,15 @@ void render_queues(object_renderer_context* context) {
         SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
+
+        if (textures != NULL) {
+            for (uint32_t i = 0; i < textures->count; i++) {
+                texture_asset_t* texture = get_asset(textures->textures[i]);
+                if (texture != NULL) {
+                    SET_UNIFORM(Handleui64ARB, obj->program, textures->names[i], texture->texture.texture_handle_arb);
+                }
+            }
+        }
 
         glBindVertexArray(mesh->vertex_buffer.VAO);
         glDrawElements(GL_TRIANGLES, mesh->vertex_buffer.indices_count, GL_UNSIGNED_INT, 0);

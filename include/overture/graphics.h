@@ -66,6 +66,13 @@ void instert_attrib(vertex_buffer_t* vertex_buffer, uint32_t index, uint32_t siz
 /// Add an index buffer to the vertex buffer.
 void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data);
 
+typedef struct {
+    uint32_t texture;
+    uint64_t texture_handle_arb;
+} texture_t;
+
+texture_t create_texture(int32_t width, int32_t height, const void* data);
+
 /// Render object component
 typedef struct {
     uint64_t window_id;
@@ -82,6 +89,13 @@ typedef struct {
 /// Transparent material label component
 typedef struct {} transparent_material_t;
 
+/// Component that holds the textures used by the render object
+typedef struct {
+    size_t count;
+    asset_handle_t* textures;
+    char(*names)[30];
+} textures_t;
+
 typedef struct {
     vec3_t pos;
     vec3_t norm;
@@ -91,5 +105,9 @@ typedef struct {
 typedef struct {
     vertex_buffer_t vertex_buffer;
 } mesh_asset_t;
+
+typedef struct {
+    texture_t texture;
+} texture_asset_t;
 
 #endif

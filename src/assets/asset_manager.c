@@ -76,6 +76,7 @@ void register_asset_loader(const char* asset_type, asset_loader_t loader) {
 }
 
 // TODO: parallelize once i finally have a good parallelization system
+// NOTE: what if someone wants to load the same asset twice but different args????
 asset_handle_t load_asset(const char* path, const char* asset_type, void* args) {
     uint64_t key = hash_asset_type(asset_type);
     size_t idx = key % ASSET_LOADER_TABLE_SIZE;

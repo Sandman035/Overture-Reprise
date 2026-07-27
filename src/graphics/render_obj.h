@@ -55,4 +55,10 @@ typedef struct {
 
 typedef struct {} transparent_material_t;
 
+typedef struct {
+    size_t count;
+    asset_handle_t* textures;
+    char (*names)[30];
+} textures_t;
+
 #endif
