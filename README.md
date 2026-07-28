@@ -28,7 +28,7 @@ Most of the design of the engine will relly on trying to make it as easy to use 
 
 Cluster Generation -> Shadow Pass -> Cubemap Z Pre-pass -> Cubemap Forward Pass -> Z Pre-pass -> Opaque Forward Pass -> Transparent Forward Pass -> OIT Blending -> Post Processing Pass(es)
 
-For abmient oclusion and other screen space effects during the opaque forward pass a separate normal buffer can also be rendered, if required for the game. This render pipeline offers quite a bit of freedom and the forward rendering allows for custom shaders. I might implement a renderer configuration to turn off the passes not required by the specific game, or there is always the option to just comment it out.
+This render pipeline offers quite a bit of freedom and the forward rendering allows for custom shaders. I might implement a renderer configuration to turn off the passes not required by the specific game, or there is always the option to just comment it out.
 
 ## Dependencies
 

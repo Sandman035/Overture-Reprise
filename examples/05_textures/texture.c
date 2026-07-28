@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+float distance = 10;
+
 void setup() {
     entity_t window_ent = create_entity();
     window_t window;
@@ -74,7 +76,7 @@ void setup() {
 
     transform_t camera_transform;
     camera_transform.scale = vec3(1, 1, 1);
-    camera_transform.pos = vec3(0, 0, 10);
+    camera_transform.pos = vec3(0, 0, distance);
     camera_transform.rot = vec3(0, 0, 0);
 
     ADD_COMPONENT(camera_t, camera_ent, &camera);
@@ -86,10 +88,22 @@ REGISTER_SYSTEM(setup, SETUP);
 void update_camera() {
     entity_t* list = FILTER_ENTITIES(camera_t, transform_t);
 
+    if (key_pressed(GLFW_KEY_W)) {
+        DEBUG("FORWARD!");
+        distance -= 0.5;
+    }
+    if (key_pressed(GLFW_KEY_S)) {
+        DEBUG("BACKWARD!");
+        distance += 0.5;
+    }
+    if (key_just_pressed(GLFW_KEY_SPACE)) {
+        distance = 10;
+    }
+
     for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
         transform_t* transform = get_comp(list[i], GET_ID(transform_t));
 
-        transform->pos = vec3(10 * sinf(glfwGetTime()), 0, 10 * cosf(glfwGetTime()));
+        transform->pos = vec3(distance * sinf(glfwGetTime()), 0, distance * cosf(glfwGetTime()));
 
         transform->rot = vec3(0, glfwGetTime(), 0);
     }

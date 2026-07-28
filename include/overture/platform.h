@@ -14,4 +14,9 @@ uint64_t create_window();
 /// Returns wether a window has been signaled to close.
 uint32_t should_window_close(uint64_t id);
 
+uint32_t key_just_pressed(uint32_t key);
+uint32_t key_pressed(uint32_t key);
+uint32_t key_just_released(uint32_t key);
+uint32_t key_released(uint32_t key);
+
 #endif

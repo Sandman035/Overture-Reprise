@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "platform/window.h"
+#include "platform/input.h"
 #include "core/log.h"
 #include "core/ecs.h"
 #include "core/systems.h"
@@ -81,6 +82,8 @@ uint64_t create_window() {
 
     glfwSetFramebufferSizeCallback(node->window.window, framebuffer_size_callback);
 
+    glfwSetKeyCallback(node->window.window, key_callback);
+
     glfwMakeContextCurrent(node->window.window);
     setup_gl_window();
 
@@ -138,8 +141,13 @@ void cleanup_windows() {
 
 REGISTER_SYSTEM(cleanup_windows, CLEANUP);
 
+void poll_events() {
+    glfwPollEvents();
+}
+
+REGISTER_SYSTEM(poll_events, PRE_UPDATE);
+
 void start_window_render() {
-    glfwPollEvents(); // maybe this should'nt be here but at the start of the game loop
 
     window_node_t* temp = window_list_head;
     while (temp != NULL) {
