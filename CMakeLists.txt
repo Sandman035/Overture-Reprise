@@ -65,4 +65,6 @@ foreach(example_dir ${EXAMPLES})
     target_link_libraries(${CURRENT_EXAMPLE} PUBLIC overture)
     target_include_directories(${CURRENT_EXAMPLE} PUBLIC "include")
     target_compile_options(${CURRENT_EXAMPLE} PRIVATE "-fPIC")
+    # THIS IS IMPORTANT FOR SERIALIZATION AND DESERIALIZATION STUFF
+    target_link_options(${CURRENT_EXAMPLE} PRIVATE -rdynamic)
 endforeach()

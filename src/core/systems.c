@@ -86,8 +86,6 @@ void register_system_before(system_ptr_t system, system_ptr_t target, schedule_t
 void run_systems_sequential(schedule_t schedule) {
     system_node_t* temp = schedule_heads[schedule];
 
-    TRACE("Executing systems in schedule: %s.", schedules[schedule]);
-
     uint32_t count = 0;
     while (temp != NULL) {
         temp->system();
@@ -95,7 +93,9 @@ void run_systems_sequential(schedule_t schedule) {
         count++;
     }
 
-    TRACE("Finished execution of %d systems in schedule: %s.", count, schedules[schedule]);
+    if (count != 0) {
+        TRACE("Executed %d system(s) in schedule: %s.", count, schedules[schedule]);
+    }
 }
 
 void run_systems_parrallel(schedule_t schedule) {

@@ -177,6 +177,9 @@ void add_index_buffer(vertex_buffer_t* vertex_buffer, size_t size, void* data) {
 }
 
 texture_t create_texture(int32_t width, int32_t height, const void* data, GLenum internal_format, GLenum format) {
+    // TODO: have an early check to see if bindless textures are supported
+    // if not then create a texture array or smt that will work similarly
+    // although the shader code won't be the same so we might need to think of smt better
     texture_t texture;
 
     glGenTextures(1, &texture.texture);

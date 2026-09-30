@@ -85,6 +85,7 @@ uint64_t create_window() {
     glfwSetKeyCallback(node->window.window, key_callback);
 
     glfwMakeContextCurrent(node->window.window);
+    //glfwSwapInterval(0); // disables vsync
     setup_gl_window();
 
     // NOTE: idk if this needs to be done for every window or not

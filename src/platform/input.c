@@ -58,11 +58,9 @@ void update_key_states() {
     for (size_t i = 0; i < GLFW_KEY_LAST + 1; i++) {
         switch (key_states[i]) {
             case JUST_PRESSED:
-                TRACE("Key '%s' is still pressed.", glfwGetKeyName(i, 0));
                 key_states[i] = PRESSED;
                 break;
             case JUST_RELEASED:
-                TRACE("Key '%s' is still released.", glfwGetKeyName(i, 0));
                 key_states[i] = RELEASED;
                 break;
             default:
@@ -76,11 +74,11 @@ REGISTER_SYSTEM_FRONT(update_key_states, PRE_UPDATE);
 void key_callback(GLFWwindow* window, int32_t key, int32_t scancode, int32_t action, int32_t mods) {
     switch (action) {
         case GLFW_PRESS:
-            TRACE("Key '%s' was just pressed.", glfwGetKeyName(key, 0));
+            TRACE("Key '%s' was pressed.", glfwGetKeyName(key, 0));
             key_states[key] = JUST_PRESSED;
             break;
         case GLFW_RELEASE:
-            TRACE("Key '%s' was just released.", glfwGetKeyName(key, 0));
+            TRACE("Key '%s' was released.", glfwGetKeyName(key, 0));
             key_states[key] = JUST_RELEASED;
             break;
         default:

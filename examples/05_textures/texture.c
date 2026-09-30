@@ -89,11 +89,9 @@ void update_camera() {
     entity_t* list = FILTER_ENTITIES(camera_t, transform_t);
 
     if (key_pressed(GLFW_KEY_W)) {
-        DEBUG("FORWARD!");
         distance -= 0.5;
     }
     if (key_pressed(GLFW_KEY_S)) {
-        DEBUG("BACKWARD!");
         distance += 0.5;
     }
     if (key_just_pressed(GLFW_KEY_SPACE)) {

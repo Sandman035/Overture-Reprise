@@ -231,6 +231,8 @@ void sort_render_objs() {
             queue->n = 0; // this is so we can use this as the idx
         }
 
+        // TODO: sort based on distance for proper blending
+
         queue->entities[queue->n] = list[i];
         queue->n++;
     }
@@ -430,8 +432,6 @@ void render_queues(object_renderer_context* context) {
     }
 
     // TODO: actually implement a proper OIT renderpass
-
-    TRACE("Complete object renderer.");
 }
 
 // TODO: cleanup render obj and render object context
