@@ -32,12 +32,14 @@ extern int should_exit;
 
 void test() {
     uint32_t x = 5;
-    uint32_t y = 5;
+    uint32_t y = 10;
 
     serial_data_t data[2];
 
     data[0].data = &x;
+    strcpy(data[0].name, "testx");
     data[1].data = &y;
+    strcpy(data[1].name, "testy");
 
     serial_component_t comp;
     strcpy(comp.name, "test_t");
