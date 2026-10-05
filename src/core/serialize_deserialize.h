@@ -22,7 +22,6 @@ typedef struct serial_entity_t {
 } serial_entity_t;
 
 typedef struct serial_scene_tree_t {
-    char name[30];
     size_t ent_count;
     serial_entity_t* ents;
 } serial_scene_tree_t;

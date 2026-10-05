@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../src/core/serialize_deserialize.h"
+#include "overture/core.h"
 
 typedef struct test_t {
     uint32_t x;
@@ -17,10 +18,10 @@ void* deserialize_test_t(serial_component_t comp) {
     test_t* test = malloc(sizeof(test_t));
 
     for (size_t i = 0; i < comp.data_count; i++) {
-        if (strcmp(comp.data[i].name, "testx")) {
+        if (strcmp(comp.data[i].name, "testx") == 0) {
             test->x = *(uint32_t*)comp.data[i].data + 5;
         }
-        if (strcmp(comp.data[i].name, "testy")) {
+        if (strcmp(comp.data[i].name, "testy") == 0) {
             test->y = *(uint32_t*)comp.data[i].data + 20;
         }
     }
@@ -55,6 +56,8 @@ void test() {
     tree.ents = &ent;
 
     actualize_scene_tree(tree);
+
+    load_asset("assets/maps/test1.otm", "overture:text_map", NULL);
 
     entity_t* list = FILTER_ENTITIES(test_t);
 
