@@ -1,3 +1,4 @@
+#include "core/serialize_deserialize.h"
 #include "graphics/opengl.h"
 #include <GLFW/glfw3.h>
 #include <stdint.h>
@@ -21,6 +22,12 @@ static window_node_t* window_list_tail = NULL;
 static uint64_t current_win_id = 0;
 
 REGISTER_COMPONENT(window_t);
+
+void* deserialize_window_t(serial_component_t comp) {
+    window_t* window = malloc(sizeof(window_t));
+    window->id = create_window();
+    return window;
+}
 
 static void error_callback(int error, const char* description) {
     ERROR("GLFW error %d: %s.", error, description);

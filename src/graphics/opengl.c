@@ -1,9 +1,13 @@
 #include "graphics/opengl.h"
 #include "assets/asset_manager.h"
 #include "core/log.h"
+#include "core/serialize_deserialize.h"
+#include "graphics/render_obj.h"
 #include "graphics/shader_asset.h"
+#include "platform/window.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 void APIENTRY gl_debug_callback(
     GLenum source, 
@@ -205,4 +209,43 @@ texture_t create_texture(int32_t width, int32_t height, const void* data, GLenum
 }
 
 void cleanup_opengl() {
+}
+
+void* deserialize_render_object_t(serial_component_t comp) {
+    render_object_t* obj = malloc(sizeof(render_object_t));
+    obj->program = create_program();
+    obj->window_id = get_last_window(); // idk how to do this better
+
+    for (size_t i = 0; i < comp.data_count; i++) {
+        if (strcmp(comp.data[i].name, "mesh") == 0) {
+            obj->mesh = load_asset(comp.data[i].data, "temp:tinyobj", NULL);
+        }
+        if (strcmp(comp.data[i].name, "vertex_shader") == 0) {
+            glsl_shader_loader_args_t args;
+            args.type = VERTEX_SHADER;
+            add_shader_asset(obj->program, load_asset(comp.data[i].data, "overture:glsl_shader", &args));
+        }
+        if (strcmp(comp.data[i].name, "fragment_shader") == 0) {
+            glsl_shader_loader_args_t args;
+            args.type = FRAGMENT_SHADER;
+            add_shader_asset(obj->program, load_asset(comp.data[i].data, "overture:glsl_shader", &args));
+        }
+    }
+
+    return obj;
+}
+
+void* deserialize_z_pre_pass_t(serial_component_t comp) {
+    z_pre_pass_t* pass = malloc(sizeof(z_pre_pass_t));
+    pass->program = create_program();
+
+    for (size_t i = 0; i < comp.data_count; i++) {
+        if (strcmp(comp.data[i].name, "vertex_shader") == 0) {
+            glsl_shader_loader_args_t args;
+            args.type = VERTEX_SHADER;
+            add_shader_asset(pass->program, load_asset(comp.data[i].data, "overture:glsl_shader", &args));
+        }
+    }
+
+    return pass;
 }

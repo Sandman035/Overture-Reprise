@@ -1,5 +1,6 @@
 #include "render_obj.h"
 #include "assets/asset_manager.h"
+#include "core/serialize_deserialize.h"
 #include "graphics/mesh_asset.h"
 #include "graphics/opengl.h"
 #include "graphics/texture_asset.h"
@@ -13,11 +14,39 @@
 #include <glad/glad.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 REGISTER_COMPONENT(render_object_t);
 REGISTER_COMPONENT(z_pre_pass_t);
 REGISTER_COMPONENT(transparent_material_t);
 REGISTER_COMPONENT(textures_t);
+
+void* deserialize_textures_t(serial_component_t comp) {
+    textures_t* textures = malloc(sizeof(textures_t));
+
+    for (size_t i = 0; i < comp.data_count; i++) {
+        if (strcmp(comp.data[i].name, "names") == 0) {
+            size_t n = comp.data[i].data_size / (sizeof(char)*100);
+            textures->count = n;
+            textures->names = malloc(n * sizeof(char[30]));
+            char (*strs)[100] = comp.data[i].data;
+            for (size_t j = 0; j < n; j++) {
+                memcpy(textures->names[j], strs[j], sizeof(char[30]));
+            }
+        }
+        if (strcmp(comp.data[i].name, "textures") == 0) {
+            size_t n = comp.data[i].data_size / (sizeof(char)*100);
+            textures->count = n;
+            textures->textures = malloc(n * sizeof(asset_handle_t));
+            char (*strs)[100] = comp.data[i].data;
+            for (size_t j = 0; j < n; j++) {
+                textures->textures[j] = load_asset(strs[j], "overture:stb_image", NULL);
+            }
+        }
+    }
+
+    return textures;
+}
 
 object_renderer_context create_object_renderer_context(uint32_t width, uint32_t height) {
     object_renderer_context context;

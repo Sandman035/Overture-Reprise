@@ -1,10 +1,33 @@
 #include "core/ecs.h"
+#include "core/serialize_deserialize.h"
 #include "core/systems.h"
 #include "math/matrix.h"
 #include "platform/window.h"
 #include "world/camera.h"
 
 REGISTER_COMPONENT(camera_t);
+
+void* deserialize_camera_t(serial_component_t comp) {
+    camera_t* camera = malloc(sizeof(camera_t));
+    camera->window_id = get_last_window();
+
+    for (size_t i = 0; i < comp.data_count; i++) {
+        if (strcmp(comp.data[i].name, "fov") == 0) {
+            camera->fov = *(float*)comp.data[i].data;
+        }
+        if (strcmp(comp.data[i].name, "aspect_ratio") == 0) {
+            camera->aspect_ratio = *(float*)comp.data[i].data;
+        }
+        if (strcmp(comp.data[i].name, "near") == 0) {
+            camera->near = *(float*)comp.data[i].data;
+        }
+        if (strcmp(comp.data[i].name, "far") == 0) {
+            camera->far = *(float*)comp.data[i].data;
+        }
+    }
+
+    return camera;
+}
 
 void update_camera_proj() {
     entity_t* list = FILTER_ENTITIES(camera_t);

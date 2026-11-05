@@ -1,3 +1,4 @@
+#include "overture/core.h"
 #include "overture/graphics.h"
 #include <overture/overture.h>
 

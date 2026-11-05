@@ -1,13 +1,39 @@
 #include "core/ecs.h"
+#include "core/serialize_deserialize.h"
 #include "core/systems.h"
 #include "graphics/render_obj.h"
 #include "math/matrix.h"
+#include "math/types.h"
 #include "math/vector.h"
 #include "platform/window.h"
 #include "world/camera.h"
+#include <stdlib.h>
+#include <string.h>
 #include "world/transform.h"
 
 REGISTER_COMPONENT(transform_t);
+
+void* deserialize_transform_t(serial_component_t comp) {
+    transform_t* transform = malloc(sizeof(transform_t));
+
+    transform->scale = vec3(0, 0, 0);
+    transform->pos = vec3(0, 0, 0);
+    transform->rot = vec3(0, 0, 0);
+
+    for (size_t i = 0; i < comp.data_count; i++) {
+        if (strcmp(comp.data[i].name, "pos") == 0) {
+            memcpy(transform->pos.raw, comp.data[i].data, sizeof(float[3]));
+        }
+        if (strcmp(comp.data[i].name, "rot") == 0) {
+            memcpy(transform->rot.raw, comp.data[i].data, sizeof(float[3]));
+        }
+        if (strcmp(comp.data[i].name, "scale") == 0) {
+            memcpy(transform->scale.raw, comp.data[i].data, sizeof(float[3]));
+        }
+    }
+
+    return transform;
+}
 
 void update_render_obj_transform() {
     entity_t*list = FILTER_ENTITIES(transform_t, render_object_t);

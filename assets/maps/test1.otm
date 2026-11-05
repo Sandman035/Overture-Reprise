@@ -1,0 +1,12 @@
+ent:
+comp: test_t
+u32: testx 1
+f32: testy 13.76
+str: stringy "thisisatest"
+str: arr ["hello", "world", "this", "is a", "crazy story"]
+
+ent:
+comp: test_t
+u32: testx 11
+f32: testy 6.5
+str: stringy "this is a test"

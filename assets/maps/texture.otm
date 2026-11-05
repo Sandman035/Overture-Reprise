@@ -1,0 +1,43 @@
+ent:
+comp: window_t
+
+ent:
+comp: render_object_t
+str: mesh "assets/models/backpack.obj"
+str: vertex_shader "assets/shaders/texture.vs"
+str: fragment_shader "assets/shaders/texture.fs"
+comp: z_pre_pass_t
+str: vertex_shader "assets/shaders/texture.vs"
+comp: transform_t
+f32: pos [0 0 0]
+f32: rot [0 0 0]
+f32: scale [1 1 1]
+comp: textures_t
+str: names ["diffuse" "ao"]
+str: textures ["assets/textures/diffuse.jpg" "assets/textures/ao.jpg"]
+
+ent:
+comp: render_object_t
+str: mesh "assets/models/backpack.obj"
+str: vertex_shader "assets/shaders/texture.vs"
+str: fragment_shader "assets/shaders/texture.fs"
+comp: z_pre_pass_t
+str: vertex_shader "assets/shaders/texture.vs"
+comp: transform_t
+f32: pos [0 0 10]
+f32: rot [0 0 0]
+f32: scale [2 2 2]
+comp: textures_t
+str: names ["diffuse" "ao"]
+str: textures ["assets/textures/diffuse.jpg" "assets/textures/ao.jpg"]
+
+ent:
+comp: camera_t
+f32: fov 45.0
+f32: aspect_ratio 1.777777778
+f32: near 0.01
+f32: far 1000
+comp: transform_t
+f32: pos [0 0 10]
+f32: rot [0 0 0]
+f32: scale [1 1 1]
