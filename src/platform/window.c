@@ -70,9 +70,16 @@ uint64_t create_window() {
     // TODO: have a debug define to not include this if not debuging
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
-    node->window.window = glfwCreateWindow(680, 480, "TEST GAME", NULL, NULL);
-    if (!node->window.window) {
-        FATAL("Could not create window.");
+    if (current_win_id == 0) {
+        node->window.window = glfwCreateWindow(680, 480, "TEST GAME", NULL, NULL);
+        if (!node->window.window) {
+            FATAL("Could not create window.");
+        }
+    } else {
+        node->window.window = glfwCreateWindow(680, 480, "TEST GAME", NULL, get_window(0)->window);
+        if (!node->window.window) {
+            FATAL("Could not create window.");
+        }
     }
 
     glfwSetWindowUserPointer(node->window.window, &node->window);
@@ -85,7 +92,7 @@ uint64_t create_window() {
     glfwSetKeyCallback(node->window.window, key_callback);
 
     glfwMakeContextCurrent(node->window.window);
-    //glfwSwapInterval(0); // disables vsync
+    glfwSwapInterval(0); // disables vsync
     setup_gl_window();
 
     // NOTE: idk if this needs to be done for every window or not
@@ -124,6 +131,10 @@ window_data_t* get_window(uint64_t id) {
 
 uint32_t should_window_close(uint64_t id) {
     return glfwWindowShouldClose(get_window(id)->window);
+}
+
+uint64_t get_last_window() {
+    return current_win_id - 1;
 }
 
 void cleanup_windows() {

@@ -57,6 +57,8 @@ uint32_t load_stb_image(const char* path, void** data_out, size_t* size, void* a
 
     stbi_image_free(data);
 
+    *size = sizeof(texture_asset_t);
+
     TRACE("Created Texture.");
 
     return 1;

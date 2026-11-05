@@ -94,14 +94,6 @@ asset_handle_t load_asset(const char* path, const char* asset_type, void* args) 
         return 0;
     }
 
-    void* data;
-    size_t size;
-    if (!loader->loader.load(path, &data, &size, args)) {
-        WARN("Failed to load asset: %s.", path);
-        free(data);
-        return 0;
-    }
-
     uint64_t hash = hash_asset_type(path);
     size_t path_idx = hash % PATH_HASH_TABLE_SIZE;
 
@@ -116,7 +108,6 @@ asset_handle_t load_asset(const char* path, const char* asset_type, void* args) 
         while (temp != NULL) {
             if (temp->path_key == hash) {
                 free(item);
-                free(data);
                 return temp->handle;
             }
 
@@ -128,6 +119,14 @@ asset_handle_t load_asset(const char* path, const char* asset_type, void* args) 
         }
 
         temp->next = item;
+    }
+
+    void* data;
+    size_t size;
+    if (!loader->loader.load(path, &data, &size, args)) {
+        WARN("Failed to load asset: %s.", path);
+        free(data);
+        return 0;
     }
 
     asset_handle_t handle = add_asset(data, size, asset_type);

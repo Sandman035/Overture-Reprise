@@ -134,6 +134,7 @@ void arch_remove_row(archetype_t* arch, uint64_t row) {
     if (row != arch->count) {
         // move last entity_id into row
         arch->entity_ids[row] = arch->entity_ids[arch->count];
+        entity_index[arch->entity_ids[arch->count]].row = row; // ??? idk if this is needed honestly it's been too long and the code works ???
         
         // for all components move last one into row
         for (int i = 0; i < comp_num; i++) {

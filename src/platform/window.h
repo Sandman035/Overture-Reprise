@@ -27,4 +27,6 @@ window_data_t* get_window(uint64_t id);
 
 uint32_t should_window_close(uint64_t id);
 
+uint64_t get_last_window();
+
 #endif
