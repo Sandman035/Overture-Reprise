@@ -3,6 +3,7 @@
 
 #include "assets/asset_manager.h"
 #include "core/ecs.h"
+#include "graphics/lights.h"
 #include "graphics/opengl.h"
 #include "math/types.h"
 #include <stddef.h>
@@ -15,6 +16,12 @@ typedef struct {
 } render_queue_t;
 
 typedef struct {
+    size_t n;
+    point_light_info_t* lights;
+    uint32_t allocated;
+} point_light_list_t;
+
+typedef struct {
     uint32_t opaque_fbo;
     uint32_t opaque_color_texture;
     uint32_t opaque_depth_rbo;
@@ -23,9 +30,11 @@ typedef struct {
     uint32_t width, height;
     mat4_t view;
     mat4_t proj;
+    vec3_t view_pos;
     render_queue_t opaque_z_pre;
     render_queue_t opaque_no_z;
     render_queue_t transparent;
+    point_light_list_t point_lights;
 } object_renderer_context;
 
 object_renderer_context create_object_renderer_context(uint32_t width, uint32_t height);

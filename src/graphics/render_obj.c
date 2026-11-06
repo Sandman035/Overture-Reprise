@@ -1,6 +1,10 @@
 #include "render_obj.h"
 #include "assets/asset_manager.h"
 #include "core/serialize_deserialize.h"
+#include "math/types.h"
+#include "math/vector.h"
+#include "world/transform.h"
+#include "graphics/lights.h"
 #include "graphics/mesh_asset.h"
 #include "graphics/opengl.h"
 #include "graphics/texture_asset.h"
@@ -70,6 +74,10 @@ object_renderer_context create_object_renderer_context(uint32_t width, uint32_t 
     context.opaque_z_pre.allocated = 0;
     context.opaque_no_z.allocated = 0;
     context.transparent.allocated = 0;
+
+    context.point_lights.n = 0;
+    context.point_lights.lights = NULL;
+    context.point_lights.allocated = 0;
 
     return context;
 }
@@ -271,6 +279,60 @@ void sort_render_objs() {
 
 REGISTER_SYSTEM(sort_render_objs, PRE_RENDER);
 
+void sort_lights() {
+    TRACE("Sorting lights to windows");
+
+    entity_t* list = FILTER_ENTITIES(point_light_t);
+
+
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        point_light_t* light = get_comp(list[i], GET_ID(point_light_t));
+        window_data_t* window = get_window(light->window_id);
+
+        if (window == NULL) {
+            WARN("Window %ld doesn't exist skipping light %p.", light->window_id, light);
+            continue;
+        }
+
+        window->context.point_lights.n++;
+    }
+
+    for (uint64_t i = 0; list[i] != ENTITY_INVALID; i++) {
+        point_light_t* light = get_comp(list[i], GET_ID(point_light_t));
+        window_data_t* window = get_window(light->window_id);
+        transform_t* transform = get_comp(list[i], GET_ID(transform_t));
+
+        if (window == NULL) {
+            WARN("Window %ld doesn't exist skipping light %p.", light->window_id, light);
+            continue;
+        }
+
+        vec3_t pos = vec3(0.0, 0.0, 0.0);
+
+        if (transform != NULL) {
+            pos = transform->pos;
+        }
+
+        point_light_list_t* lights = &window->context.point_lights;
+
+        if (!lights->allocated) {
+            lights->lights = malloc(lights->n * sizeof(point_light_info_t));
+            lights->allocated = 1;
+
+            lights->n = 0; // this is so we can use this as the idx
+        }
+
+        lights->lights[lights->n].pos = pos;
+        lights->lights[lights->n].intensity = light->intensity;
+        lights->lights[lights->n].colour = light->colour;
+        lights->n++;
+    }
+
+    free(list);
+}
+
+REGISTER_SYSTEM(sort_lights, PRE_RENDER);
+
 void clear_render_queues(object_renderer_context* context) {
     context->opaque_z_pre.n = 0;
     context->opaque_no_z.n = 0;
@@ -287,18 +349,47 @@ void clear_render_queues(object_renderer_context* context) {
     context->opaque_z_pre.allocated = 0;
     context->opaque_no_z.allocated = 0;
     context->transparent.allocated = 0;
+
+    context->point_lights.n = 0;
+    free(context->point_lights.lights);
+    context->point_lights.lights = NULL;
+    context->point_lights.allocated = 0;
 }
 
 void render_queues(object_renderer_context* context) {
     // TODO: get window info
     TRACE("Start object renderer.");
 
+    GLuint light_ssbo;
+
+    // TODO: no need to regenerate this buffer just repopulate it
+    glGenBuffers(1, &light_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ssbo);
+
+    glBufferData(GL_SHADER_STORAGE_BUFFER, context->point_lights.n * sizeof(point_light_info_t), context->point_lights.lights, GL_DYNAMIC_DRAW);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, light_ssbo);
+
     /******************/
     /* Depth Pre-pass */
     /******************/
     // Renders all opaque objects to the depth buffer
+    
+    // NOTE: pre pass is currently extremely inefficient in certain cases, idk why idk how but it is
 
     TRACE("Start depth pre-pass.");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
 
     entity_t* list = context->opaque_z_pre.entities;
 
@@ -311,14 +402,6 @@ void render_queues(object_renderer_context* context) {
         if (mesh == NULL) {
             continue;
         }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
-
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-        glDepthFunc(GL_LESS);
 
         glUseProgram(z_pre_pass->program);
 
@@ -337,6 +420,14 @@ void render_queues(object_renderer_context* context) {
 
     TRACE("Start opaque pass.");
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_EQUAL);
+    glDepthMask(GL_FALSE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     for (uint64_t i = 0; i < context->opaque_z_pre.n; i++) {
         render_object_t* obj = get_comp(list[i], GET_ID(render_object_t));
         textures_t* textures = get_comp(list[i], GET_ID(textures_t));
@@ -347,20 +438,13 @@ void render_queues(object_renderer_context* context) {
             continue;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_EQUAL);
-        glDepthMask(GL_FALSE);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_BACK);
-
         glUseProgram(obj->program);
 
         SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
+
+        SET_UNIFORM(3fv, obj->program, "viewPos", 1, context->view_pos.raw);
 
         if (textures != NULL) {
             for (uint32_t i = 0; i < textures->count; i++) {
@@ -377,6 +461,14 @@ void render_queues(object_renderer_context* context) {
 
     TRACE("Render non-z_pre_pass objects.");
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     list = context->opaque_no_z.entities;
 
     for (uint64_t i = 0; i < context->opaque_no_z.n; i++) {
@@ -389,20 +481,13 @@ void render_queues(object_renderer_context* context) {
             continue;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, context->opaque_fbo);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
         glUseProgram(obj->program);
 
         SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
+
+        SET_UNIFORM(3fv, obj->program, "viewPos", 1, context->view_pos.raw);
 
         if (textures != NULL) {
             for (uint32_t i = 0; i < textures->count; i++) {
@@ -423,6 +508,12 @@ void render_queues(object_renderer_context* context) {
 
     TRACE("Start transparent pass.");
 
+    glBindFramebuffer(GL_FRAMEBUFFER, context->transparent_fbo);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
     list = context->transparent.entities;
 
     for (uint64_t i = 0; i < context->transparent.n; i++) {
@@ -435,17 +526,13 @@ void render_queues(object_renderer_context* context) {
             continue;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, context->transparent_fbo);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
         glUseProgram(obj->program);
 
         SET_UNIFORM(Matrix4fv, obj->program, "world", 1, GL_TRUE, &obj->world_transform.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "view", 1, GL_TRUE, &context->view.m00);
         SET_UNIFORM(Matrix4fv, obj->program, "proj", 1, GL_TRUE, &context->proj.m00);
+
+        SET_UNIFORM(3fv, obj->program, "viewPos", 1, context->view_pos.raw);
 
         if (textures != NULL) {
             for (uint32_t i = 0; i < textures->count; i++) {
@@ -461,6 +548,8 @@ void render_queues(object_renderer_context* context) {
     }
 
     // TODO: actually implement a proper OIT renderpass
+
+    glDeleteBuffers(1, &light_ssbo);
 }
 
 // TODO: cleanup render obj and render object context

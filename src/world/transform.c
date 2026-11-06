@@ -66,6 +66,7 @@ void update_camera_transform() {
         view = translate_mat4(view, vec3_scale(transform->pos, -1.0));
         view = rotate_mat4(view, vec3_scale(transform->rot, -1.0));
         get_window(camera->window_id)->context.view = view;
+        get_window(camera->window_id)->context.view_pos = transform->pos;
     }
 
     free(list);

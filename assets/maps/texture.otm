@@ -5,7 +5,7 @@ ent:
 comp: render_object_t
 str: mesh "assets/models/backpack.obj"
 str: vertex_shader "assets/shaders/texture.vs"
-str: fragment_shader "assets/shaders/texture.fs"
+str: fragment_shader "assets/shaders/test.fs"
 comp: z_pre_pass_t
 str: vertex_shader "assets/shaders/texture.vs"
 comp: transform_t
@@ -13,23 +13,35 @@ f32: pos [0 0 0]
 f32: rot [0 0 0]
 f32: scale [1 1 1]
 comp: textures_t
-str: names ["diffuse" "ao"]
-str: textures ["assets/textures/diffuse.jpg" "assets/textures/ao.jpg"]
+str: names ["diffuse" "ao" "specular"]
+str: textures ["assets/textures/diffuse.jpg" "assets/textures/ao.jpg" "assets/textures/specular.jpg"]
 
 ent:
-comp: render_object_t
-str: mesh "assets/models/backpack.obj"
-str: vertex_shader "assets/shaders/texture.vs"
-str: fragment_shader "assets/shaders/texture.fs"
-comp: z_pre_pass_t
-str: vertex_shader "assets/shaders/texture.vs"
+comp: point_light_t
+f32: colour [1 1 1]
+f32: intensity 1.0
 comp: transform_t
-f32: pos [0 0 10]
+f32: pos [2 2 2]
 f32: rot [0 0 0]
-f32: scale [2 2 2]
-comp: textures_t
-str: names ["diffuse" "ao"]
-str: textures ["assets/textures/diffuse.jpg" "assets/textures/ao.jpg"]
+f32: scale [1 1 1]
+
+ent:
+comp: point_light_t
+f32: colour [0.5 0 0]
+f32: intensity 1.0
+comp: transform_t
+f32: pos [0 10 0]
+f32: rot [0 0 0]
+f32: scale [1 1 1]
+
+ent:
+comp: point_light_t
+f32: colour [0 0 0.25]
+f32: intensity 1.0
+comp: transform_t
+f32: pos [5 10 1]
+f32: rot [0 0 0]
+f32: scale [1 1 1]
 
 ent:
 comp: camera_t
